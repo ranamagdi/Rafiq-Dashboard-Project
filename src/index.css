@@ -11,7 +11,7 @@
   --color-background: #F9F9FF;
   --color-error-field: #FFDAD6;
 
-
+  --color-forms-texts:#434654;
   --color-slate-dark-blue: #041B3C;
   --color-slate-medium-blue: #4F5F7B;
   --color-slate-light-blue: #C3C6D6;
@@ -48,6 +48,7 @@
   /* ---------- RADIUS ---------- */
   --radius-button: 2px;
   --radius-inputs:4px ;
+  --radius-form: 8px;
 
  
   
@@ -56,7 +57,17 @@
 
 body {
   font-family: var(--font-sans);
+  background-color: var(--color-background);
 
 }
 
+.error-message{
+    font-size: var(--label-sm-size);
+    font-weight: var(--body-md-weight);
+    color: var(--color-error) !important;
+    line-height: 16.5px;
+}
+.error-label{
+      color: var(--color-error) !important;
+}
 

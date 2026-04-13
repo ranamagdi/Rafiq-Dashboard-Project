@@ -1,10 +1,13 @@
+import React from "react";
+
 type Props = {
   variant?: "primary" | "text";
   color?: string;
   fontSize?: string;
   fontWeight?: string;
   children: React.ReactNode;
-};
+  className?: string;
+} & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 const Button = ({
   variant = "primary",
@@ -12,20 +15,28 @@ const Button = ({
   fontSize,
   fontWeight,
   children,
+  className,
+  disabled,
+  type = "button",
+  ...rest
 }: Props) => {
   let style: React.CSSProperties = {};
 
   if (variant === "primary") {
     style = {
-      background:"linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%)",
+      background:
+        "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%)",
       color: color || "#fff",
       padding: "10px 24px",
-      borderRadius: "2px",
+      borderRadius: "4px",
       fontSize: "var(--body-md-size)",
       fontWeight: "var(--headline-lg-weight)",
       border: "none",
       height: "40px",
+      width: "100%",
       boxShadow: "0px 1px 2px #0000000D",
+      cursor: disabled ? "not-allowed" : "pointer",
+      opacity: disabled ? 0.6 : 1,
     };
   } else {
     style = {
@@ -36,10 +47,22 @@ const Button = ({
       fontWeight: fontWeight || "var(--headline-lg-weight)",
       border: "none",
       height: "40px",
+      cursor: disabled ? "not-allowed" : "pointer",
+      opacity: disabled ? 0.6 : 1,
     };
   }
 
-  return <button style={style}>{children}</button>;
+  return (
+    <button
+      style={style}
+      className={className}
+      disabled={disabled}
+      type={type}
+      {...rest}
+    >
+      {children}
+    </button>
+  );
 };
 
 export default Button;

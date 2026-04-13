@@ -1,42 +1,42 @@
-
+import React from "react";
 
 type Props = {
   isValid?: boolean;
   placeholder?: string;
-};
+  type?: string;
+  icon?: string;
+} & React.InputHTMLAttributes<HTMLInputElement>;
 
-const Input = ({ isValid = true, placeholder }: Props) => {
-  let style: React.CSSProperties = {};
+const Input = React.forwardRef<HTMLInputElement, Props>(
+  ({ isValid = true, placeholder, type, icon, ...rest }, ref) => {
+    return (
+      <div className="relative w-full mt-1">
+        <input
+          ref={ref}
+          type={type}
+          placeholder={placeholder}
+          className={`
+            w-full h-11 rounded-sm outline-none border-none
+            pr-10 pl-4
+            ${
+              isValid
+                ? "bg-(--color-surface-highest)"
+                : "bg-(--color-error-field)"
+            }
+          `}
+          {...rest} 
+        />
 
-  if (isValid) {
-    style = {
-    //   width: "568px",
-      height: "44px",
-      borderRadius: "4px",
-      padding: "13px 16px 14px 16px",
-      background: "var(--color-surface-highest)",
-      border: "none",
-      outline: "none",
-    };
-  } else {
-    style = {
-    //   width: "568px",
-      height: "44px",
-      borderRadius: "4px",
-      padding: "12px 16px",
-      background: "var(--color-error-field)",
-      border: "none",
-      outline: "none",
-    };
+        {icon && (
+          <img
+            src={icon}
+            alt="icon"
+            className="absolute right-3 top-1/2 md:hidden -translate-y-1/2 w-5 h-5 opacity-60"
+          />
+        )}
+      </div>
+    );
   }
-
-  return (
-    <input
-      style={style}
-      placeholder={placeholder}
-      className={!isValid ? "invalid" : ""}
-    />
-  );
-};
+);
 
 export default Input;
