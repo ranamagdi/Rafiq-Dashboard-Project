@@ -7,6 +7,7 @@ type Props = {
   fontWeight?: string;
   children: React.ReactNode;
   className?: string;
+  backGround?:string
 } & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 const Button = ({
@@ -17,6 +18,7 @@ const Button = ({
   children,
   className,
   disabled,
+  backGround,
   type = "button",
   ...rest
 }: Props) => {
@@ -24,7 +26,7 @@ const Button = ({
 
   if (variant === "primary") {
     style = {
-      background:
+      background:backGround||
         "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%)",
       color: color || "#fff",
       padding: "10px 24px",

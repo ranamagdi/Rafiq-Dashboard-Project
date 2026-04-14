@@ -17,6 +17,11 @@ import iconchecked from "./icons/icon-checked.svg";
 import lock from "./icons/lock.svg";
 import mailgrey from "./icons/mail-grey.svg";
 import arrow from "./icons/arrow.svg";
+import eye from "./icons/eye.svg";
+import backArrow from "./icons/back-arrow.svg";
+import lockForgot from "./icons/lock-forgot.svg";
+import clock from "./icons/clock.svg";
+import filledIconCheck from "./icons/filled-iconcheck.svg"
 
 export const IMAGES = {
   logo,
@@ -35,8 +40,12 @@ export const ICONS = {
   rocket,
   shield,
   iconchecked,
+  clock,
   lock,
   mailgrey,
   arrow,
-
+  eye,
+  backArrow,
+  lockForgot,
+  filledIconCheck
 };

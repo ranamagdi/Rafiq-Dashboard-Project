@@ -10,7 +10,6 @@ import z from "zod";
 import { signUp } from "../../../services/endpoints";
 import { useState } from "react";
 import Cookies from "js-cookie";
-import axios from "axios";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -96,13 +95,11 @@ const Signup = () => {
 
       navigate("/dashboard");
       console.log("Sign up successful:", response.data);
-    }catch (error) {
-  if (axios.isAxiosError(error)) {
-    const message =
-      error.response?.data?.message || "An error occurred during sign up";
-    setErrorMessage(message);
+   } catch (error) {
+  if (error instanceof Error) {
+    setErrorMessage(error.message)
   } else {
-    setErrorMessage("An error occurred during sign up");
+    setErrorMessage("An error occurred during sign up")
   }
 }
   };

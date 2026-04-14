@@ -10,9 +10,12 @@ import z from "zod";
 import { login } from "../../../services/endpoints";
 import { useState } from "react";
 import Cookies from "js-cookie";
-import axios from "axios";
+import { useAppDispatch } from "../../../hooks/reduxHooks";
+import { setUserMetaData } from "../../../features/user/userSlice";
+
 const Login = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [remember, setRemember] = useState(false);
   const loginSchema = z.object({
@@ -34,11 +37,13 @@ const Login = () => {
   });
 const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
   try {
-    setErrorMessage(null); 
+    setErrorMessage(null);
 
     const response = await login(data.email, data.password);
 
-    const { access_token, refresh_token, user } = response.data;
+    console.log("API Response:", response);
+
+    const { access_token, refresh_token, user } = response;
 
     Cookies.set("access_token", access_token, {
       secure: true,
@@ -50,20 +55,19 @@ const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
       sameSite: "Strict",
     });
 
-    localStorage.setItem("user", JSON.stringify(user));
+    dispatch(setUserMetaData(user.user_metadata)); 
+
+    console.log("User Meta Data:", user.user_metadata);
 
     navigate("/dashboard");
   } catch (error) {
-  if (axios.isAxiosError(error)) {
-    const message =
-      error.response?.data?.message || "An error occurred during sign up";
-    setErrorMessage(message);
-  } else {
-    setErrorMessage("An error occurred during sign up");
+    if (error instanceof Error) {
+      setErrorMessage(error.message);
+    } else {
+      setErrorMessage("An error occurred during sign in");
+    }
   }
-}
 };
-
   return (
     <div className="h-screen flex items-center justify-center">
       <div className="auth-container">
@@ -85,11 +89,12 @@ const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
         )}
         <form className="auth-form" onSubmit={handleSubmit(handleSubmitForm)}>
           <div className="form-section">
-            <label className={errors.email ? "error-label" : ""}>email</label>
+            <label className={errors.email ? "error-label" : ""}>email address</label>
             <Input
               type="text"
               placeholder="yourname@company.com"
               icon={ICONS.mailgrey}
+              hideIconOnMd={true}
               isValid={!errors.email}
               {...register("email")}
             />
@@ -102,14 +107,18 @@ const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
               <label className={errors.password ? "error-label" : ""}>
                 password
               </label>
-              <a href="#" className="forget-password-responsive">
+              <span
+                className="forget-password-responsive cursor-pointer"
+                onClick={() => navigate("/forgot-password")}
+              >
                 Forgot?
-              </a>
+              </span>
             </div>
             <Input
               type="password"
               placeholder="Minimum 8 characters"
               icon={ICONS.lock}
+              hideIconOnMd={true}
               isValid={!errors.password}
               {...register("password")}
               style={{ marginTop: "-10px" }}
@@ -119,33 +128,40 @@ const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
             )}
           </div>
 
-          <label className="flex items-center gap-2 cursor-pointer select-none mt-3">
-            <input
-              type="checkbox"
-              checked={remember}
-              onChange={(e) => setRemember(e.target.checked)}
-              className="peer hidden"
-            />
+          <div className="flex items-center justify-between mt-2  w-100">
+            <label className="flex items-center gap-2 cursor-pointer select-none mt-3">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+                className="peer hidden"
+              />
 
-            <div
-              className="
-      w-4 h-4
-      border border-[#C3C6D6]
-      rounded-sm
-      flex items-center justify-center
-      transition
-      bg-[#F1F3FF]
-      peer-checked:bg-primary
-    "
+              <div
+                className="
+                w-4 h-4
+                border border-[#C3C6D6]
+                rounded-sm
+                flex items-center justify-center
+                transition
+                bg-[#F1F3FF]
+                peer-checked:bg-primary
+                "
+              >
+                {remember && (
+                  <span className="text-[14px] font-bold leading-none">✓</span>
+                )}
+              </div>
+
+              <p className="remember-me">Remember me</p>
+            </label>
+            <span
+              className="forget-password cursor-pointer"
+              onClick={() => navigate("/forgot-password")}
             >
-              {remember && (
-                <span className="text-[14px] font-bold leading-none">✓</span>
-              )}
-            </div>
-
-            <p className="remember-me">Remember me</p>
-          </label>
-
+              Forgot Password?
+            </span>
+          </div>
           <Button
             className="login-disktop"
             disabled={isSubmitting}
@@ -166,7 +182,7 @@ const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
           Don't have an account?{" "}
           <span
             className="text-primary cursor-pointer"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/sign-up")}
           >
             Sign Up
           </span>

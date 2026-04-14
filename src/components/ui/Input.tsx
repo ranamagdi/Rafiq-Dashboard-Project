@@ -5,10 +5,13 @@ type Props = {
   placeholder?: string;
   type?: string;
   icon?: string;
+ specialStyle?:string;
+
+  hideIconOnMd?: boolean;
 } & React.InputHTMLAttributes<HTMLInputElement>;
 
 const Input = React.forwardRef<HTMLInputElement, Props>(
-  ({ isValid = true, placeholder, type, icon, ...rest }, ref) => {
+  ({ isValid = true, placeholder, type, icon,hideIconOnMd,specialStyle, ...rest }, ref) => {
     return (
       <div className="relative w-full mt-1">
         <input
@@ -20,23 +23,25 @@ const Input = React.forwardRef<HTMLInputElement, Props>(
             pr-10 pl-4
             ${
               isValid
-                ? "bg-(--color-surface-highest)"
+                ? specialStyle ||"bg-(--color-surface-highest)"
                 : "bg-(--color-error-field)"
             }
           `}
-          {...rest} 
+          {...rest}
         />
-
         {icon && (
           <img
             src={icon}
             alt="icon"
-            className="absolute right-3 top-1/2 md:hidden -translate-y-1/2 w-5 h-5 opacity-60"
+            className={`
+      absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 opacity-60
+      ${hideIconOnMd ? "md:hidden" : ""}
+    `}
           />
         )}
       </div>
     );
-  }
+  },
 );
 
 export default Input;
