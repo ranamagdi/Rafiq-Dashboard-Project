@@ -9,10 +9,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import { signUp } from "../../../services/endpoints";
 import { useState } from "react";
-import Cookies from "js-cookie";
+import { useCookie } from "../../../hooks/useCookie";
+import { useAppDispatch } from "../../../hooks/reduxHooks";
+import { setUserMetaData } from "../../../features/user/userSlice";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { setCookie } = useCookie();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const signUpSchema = z
@@ -80,18 +84,13 @@ const Signup = () => {
         },
       });
       const { access_token, refresh_token, user } = response.data;
+   
+       setCookie("access_token", access_token);
+    setCookie("refresh_token", refresh_token);
 
-      Cookies.set("access_token", access_token, {
-        secure: true,
-        sameSite: "Strict",
-      });
+        dispatch(setUserMetaData(user.user_metadata)); 
 
-      Cookies.set("refresh_token", refresh_token, {
-        secure: true,
-        sameSite: "Strict",
-      });
-
-      localStorage.setItem("user", JSON.stringify(user));
+    console.log("User Meta Data:", user.user_metadata);
 
       navigate("/dashboard");
       console.log("Sign up successful:", response.data);

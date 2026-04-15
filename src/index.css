@@ -71,4 +71,6 @@ body {
 .error-label{
       color: var(--color-error) !important;
 }
-
+button{
+  cursor: pointer;
+}

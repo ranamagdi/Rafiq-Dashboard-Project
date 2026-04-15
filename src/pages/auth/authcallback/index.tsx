@@ -1,11 +1,11 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import Cookies from "js-cookie";
+import { useCookie } from "../../../hooks/useCookie";
 
 const AuthCallback = () => {
   const navigate = useNavigate();
   const ran = useRef(false);
-
+  const { setCookie } = useCookie();
   useEffect(() => {
     if (ran.current) return;
     ran.current = true;
@@ -32,10 +32,8 @@ const AuthCallback = () => {
 
     if (type === "recovery" && accessToken) {
    
-      Cookies.set("recovery_token", accessToken, {
-        secure: true,
-        sameSite: "Strict",
-      });
+      setCookie("access_token", accessToken);
+  
 
       navigate(
         `/reset-password?access_token=${accessToken}&type=recovery`,

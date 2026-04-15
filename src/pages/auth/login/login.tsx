@@ -9,11 +9,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import { login } from "../../../services/endpoints";
 import { useState } from "react";
-import Cookies from "js-cookie";
+import { useCookie } from "../../../hooks/useCookie";
 import { useAppDispatch } from "../../../hooks/reduxHooks";
 import { setUserMetaData } from "../../../features/user/userSlice";
 
 const Login = () => {
+  const { setCookie } = useCookie();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -45,16 +46,8 @@ const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
 
     const { access_token, refresh_token, user } = response;
 
-    Cookies.set("access_token", access_token, {
-      secure: true,
-      sameSite: "Strict",
-    });
-
-    Cookies.set("refresh_token", refresh_token, {
-      secure: true,
-      sameSite: "Strict",
-    });
-
+    setCookie("access_token", access_token);
+    setCookie("refresh_token", refresh_token);
     dispatch(setUserMetaData(user.user_metadata)); 
 
     console.log("User Meta Data:", user.user_metadata);

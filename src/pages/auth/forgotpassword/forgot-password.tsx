@@ -83,7 +83,7 @@ const ForgotPassword = () => {
   const isResendDisabled = timer > 0 || resendAttempts >= 3;
 
   return (
-    <div className="h-screen items-center">
+    <div className="h-screen items-center ">
       <div className="auth-container auth-container-forgot">
         <div className="lockforgot-container mx-auto">
           <img src={ICONS.lockForgot} alt="Lock" />
