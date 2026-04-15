@@ -1,12 +1,16 @@
-import Cookies from 'js-cookie'
-
 const BASE_URL = import.meta.env.VITE_API_URL
+const getCookie = (name: string) => {
+  return document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(name + "="))
+    ?.split("=")[1];
+};
 
 const request = async (
   endpoint: string,
   options: RequestInit = {}
 ) => {
-  const token = Cookies.get('access_token')
+   const token = getCookie("access_token");
 
   const res = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,

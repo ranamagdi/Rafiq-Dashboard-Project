@@ -5,10 +5,16 @@ import { useCookie } from "../../../hooks/useCookie";
 const AuthCallback = () => {
   const navigate = useNavigate();
   const ran = useRef(false);
-  const { setCookie } = useCookie();
+  const { setCookie,getCookie} = useCookie();
   useEffect(() => {
     if (ran.current) return;
     ran.current = true;
+   const existingAccessToken = getCookie("access_token");
+  
+     if (existingAccessToken) {
+      navigate("/dashboard", { replace: true });
+      return;
+    }
 
     const hash = window.location.hash;
     const params = new URLSearchParams(hash.replace("#", ""));

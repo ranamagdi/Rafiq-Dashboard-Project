@@ -1,0 +1,62 @@
+
+import { useCookie } from "../../../hooks/useCookie";
+import './Header.css'
+import { useAppSelector } from "../../../hooks/reduxHooks";
+import Logo from '/favicon.svg'
+
+const Header = () => {
+  const { getCookie } = useCookie();
+
+  const accessToken = getCookie("access_token");
+
+  const user = useAppSelector((state) => state.user.userMetaData);
+
+  const getInitials = (name: string | undefined) => {
+    if (!name) return "";
+
+    const parts = name.trim().split(/\s+/);
+
+    if (parts.length >= 2) {
+      return parts[0][0].toUpperCase() + parts[1][0].toUpperCase();
+    }
+
+    return parts[0].slice(0, 2).toUpperCase();
+  };
+
+  const initials = getInitials(user?.name);
+
+  return (
+    <header className={accessToken ? "border-b border-gray-200" : ""}>
+      <nav className="mx-auto flex items-center justify-between p-6">
+        <div className="flex lg:flex-1">
+          
+          <a href="#" className="flex items-center justify-between gap-2 ">
+        
+            <img src={Logo} alt="Your Company" className="h-8 w-auto" />
+          
+            <span className="logo-name">
+            TASKLY
+          </span>
+          </a>
+        </div>
+
+        {accessToken && user && (
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="userName">{user.name}</p>
+              <p className="userDepartment uppercase">
+                {user.department}
+              </p>
+            </div>
+
+            <div className="w-10 h-10 flex items-center justify-center container-name ">
+              {initials}
+            </div>
+          </div>
+        )}
+      </nav>
+    </header>
+  );
+};
+
+export default Header;

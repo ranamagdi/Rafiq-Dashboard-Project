@@ -1,5 +1,3 @@
-// logo
-import logo from "./Logo.png";
 
 // icons
 import dashboard from "./icons/dashboard.svg";
@@ -23,9 +21,6 @@ import lockForgot from "./icons/lock-forgot.svg";
 import clock from "./icons/clock.svg";
 import filledIconCheck from "./icons/filled-iconcheck.svg"
 
-export const IMAGES = {
-  logo,
-};
 
 export const ICONS = {
   dashboard,

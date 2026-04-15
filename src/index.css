@@ -74,3 +74,10 @@ body {
 button{
   cursor: pointer;
 }
+.logo-name{
+  color: var(--color-slate-dark-blue);
+  font-size: 20px;
+  font-weight: var(--display-lg-weight);
+  line-height: 28px;
+  letter-spacing: -0.5px;
+}
