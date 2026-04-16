@@ -38,7 +38,7 @@ const navItems: NavItem[] = [
     path: "/dashboard/projects",
     responsiveIcon: ProjectsIconResponsive,
   },
-  { label: "Project Epics", icon: EpicsIcon , path: "/dashboard/projects"},
+  { label: "Project Epics", icon: EpicsIcon , path: "#"},
   { label: "Project Tasks", icon: TasksIcon, path: "#" },
   { label: "Project Members", icon: MembersIcon, path: "#" },
   { label: "Project Details", icon: DetailsIcon , path: "#"},
