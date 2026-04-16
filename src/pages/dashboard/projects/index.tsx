@@ -31,10 +31,24 @@ const [error, setError] = useState<Error | null>(null);
         const data: Project[] = Array.isArray(res) ? res : res?.data ?? [];
 
         setProjects(data);
-      } catch (err) {
-        console.error("Failed to fetch projects:", err);
-        setError(err);
-      } finally {
+       } catch (err: unknown) {
+  console.error("Failed to fetch projects:", err);
+
+  const error = err as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+    message?: string;
+  };
+
+  setError(
+    new Error(
+      error?.response?.data?.message || error?.message || "Unknown error"
+    )
+  );
+} finally {
         setLoading(false);
       }
     };

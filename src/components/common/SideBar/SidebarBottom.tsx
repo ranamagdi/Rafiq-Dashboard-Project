@@ -10,9 +10,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import React from "react";
 
 type Props = {
-  collapsed: boolean;
+
   isMobile: boolean;
-  onItemClick: (index: number) => void;
+
 };
 
 type SidebarItem = {

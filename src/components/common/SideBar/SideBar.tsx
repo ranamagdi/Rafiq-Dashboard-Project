@@ -26,7 +26,7 @@ type IconProps = {
 
 type NavItem = {
   label: string;
-  path?: string;
+  path: string;
   icon: React.ComponentType<IconProps>;
   responsiveIcon?: React.ComponentType<IconProps>;
 };
@@ -38,10 +38,10 @@ const navItems: NavItem[] = [
     path: "/dashboard/projects",
     responsiveIcon: ProjectsIconResponsive,
   },
-  { label: "Project Epics", icon: EpicsIcon },
-  { label: "Project Tasks", icon: TasksIcon },
-  { label: "Project Members", icon: MembersIcon },
-  { label: "Project Details", icon: DetailsIcon },
+  { label: "Project Epics", icon: EpicsIcon , path: "/dashboard/projects"},
+  { label: "Project Tasks", icon: TasksIcon, path: "/dashboard/projects" },
+  { label: "Project Members", icon: MembersIcon, path: "/dashboard/projects" },
+  { label: "Project Details", icon: DetailsIcon , path: "/dashboard/projects"},
 ];
 
 export default function Sidebar() {
@@ -112,8 +112,10 @@ export default function Sidebar() {
               <div
                 key={item.label}
                 onClick={() => {
-                  navigate(item.path);
-                  if (isMobile) dispatch(closeSidebar());
+                  if (item.path) {
+                    navigate(item.path);
+                    if (isMobile) dispatch(closeSidebar());
+                  }
                 }}
                 title={collapsed ? item.label : undefined}
                 className={`
