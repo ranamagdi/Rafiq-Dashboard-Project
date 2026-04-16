@@ -9,11 +9,18 @@ import { getProjects } from "../../../services/endpoints";
 import ProjectCardSkeleton from "../../../components/project/ProjectCardSkeleton";
 
 export default function Projects() {
-  const [projects, setProjects] = useState([]);
+    type Project = {
+  id: string;
+  name: string;
+  description: string;
+  created_at: string;
+};
+const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const [error, setError] = useState<Error | null>(null);
   const navigate = useNavigate();
   const hasFetched = useRef(false);
+
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
@@ -21,7 +28,7 @@ export default function Projects() {
     const fetchProjects = async () => {
       try {
         const res = await getProjects();
-        const data = Array.isArray(res) ? res : res?.data || [];
+        const data: Project[] = Array.isArray(res) ? res : res?.data ?? [];
 
         setProjects(data);
       } catch (err) {

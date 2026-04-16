@@ -22,7 +22,14 @@ const projectSchema = z.object({
 });
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
-
+type ApiError = {
+  message?: string;
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+};
 export default function Projects() {
   const navigate = useNavigate();
   const {
@@ -55,10 +62,12 @@ export default function Projects() {
         message: "Project created successfully",
       });
     } catch (err: unknown) {
-      console.log("ERROR:", err);
+      const error = err as ApiError;
 
       const message =
-        err?.response?.data?.message || err?.message || "Something went wrong";
+        error?.response?.data?.message ||
+        error?.message ||
+        "Something went wrong";
 
       setStatus({
         type: "error",

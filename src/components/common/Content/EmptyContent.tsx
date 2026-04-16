@@ -1,12 +1,20 @@
+import React from "react";
+
+type EmptyContentProps = {
+  image?: string;
+  title?: string;
+  description?: string;
+  children?: React.ReactNode;
+};
+
 const EmptyContent = ({
   image,
   title = "No Data",
   description = "Nothing to show here yet.",
   children,
-}) => {
+}: EmptyContentProps) => {
   return (
     <div className="flex flex-col justify-center items-center text-center py-10 px-4">
-      
       {image && (
         <img
           src={image}
@@ -23,7 +31,6 @@ const EmptyContent = ({
         {description}
       </p>
 
-      {/* 👇 render whatever is passed */}
       {children}
     </div>
   );

@@ -21,10 +21,8 @@ const Dashboard = () => {
      
           {isMobile && !isOpen && (
         <SidebarBottom
-          collapsed={false}
-          isMobile={isMobile}
-          activeIndex={0}
-          onItemClick={(i) => console.log(i)}
+         isMobile={isMobile}
+    
         />
       )}
    

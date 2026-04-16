@@ -6,31 +6,37 @@ import {
   MembersIcon,
   DetailsIcon,
 } from "./SideBarIcons";
-import { useNavigate,useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import React from "react";
+
 type Props = {
   collapsed: boolean;
   isMobile: boolean;
   onItemClick: (index: number) => void;
-
 };
 
-const items = [
+type SidebarItem = {
+  label: string;
+  icon: React.ComponentType<{ isActive?: boolean }>;
+  path?: string;
+};
+
+const items: SidebarItem[] = [
   { label: "Projects", icon: ProjectsIconResponsive, path: "/dashboard/projects" },
   { label: "Epics", icon: EpicsIcon },
   { label: "Tasks", icon: TasksIcon },
   { label: "Members", icon: MembersIcon },
   { label: "Details", icon: DetailsIcon },
 ];
-export default function SidebarBottom({
-  isMobile,
-}: Props) {
+
+export default function SidebarBottom({ isMobile }: Props) {
   const isOpen = useAppSelector((state) => state.slider.isSidebarOpen);
   const navigate = useNavigate();
   const location = useLocation();
 
   if (!(isMobile && !isOpen)) return null;
 
-  const handleClick = (item: unknown) => {
+  const handleClick = (item: SidebarItem) => {
     if (item.path) {
       navigate(item.path);
     }
@@ -38,14 +44,14 @@ export default function SidebarBottom({
 
   return (
     <div className="flex items-center justify-between gap-1 mt-auto bg-(--color-surface-low) fixed bottom-0 left-0 right-0 px-2 py-1">
-      {items.map((item, i) => {
+      {items.map((item) => {
         const Icon = item.icon;
         const isActive = location.pathname === item.path;
 
         return (
           <div
             key={item.label}
-            onClick={() => handleClick(item, i)}
+            onClick={() => handleClick(item)}
             className="flex flex-col items-center justify-center px-3 py-2 cursor-pointer"
           >
             <Icon isActive={isActive} />

@@ -1,10 +1,12 @@
 const BASE_URL = import.meta.env.VITE_API_URL;
+
 const getCookie = (name: string) => {
   return document.cookie
     .split("; ")
     .find((row) => row.startsWith(name + "="))
     ?.split("=")[1];
 };
+
 const safeJson = async (res: Response) => {
   const text = await res.text();
   try {
@@ -13,20 +15,33 @@ const safeJson = async (res: Response) => {
     return null;
   }
 };
+
+
+type ApiError = Error & {
+  response?: {
+    status: number;
+    data: unknown;
+  };
+};
+
+
 const refreshAccessToken = async () => {
   const refreshToken = getCookie("refresh_token");
 
   if (!refreshToken) throw new Error("No refresh token");
 
-  const res = await fetch(`${BASE_URL}/auth/v1/token?grant_type=refresh_token`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: import.meta.env.VITE_API_KEY,
-    },
-    body: JSON.stringify({ refresh_token: refreshToken }),
-    credentials: "include",
-  });
+  const res = await fetch(
+    `${BASE_URL}/auth/v1/token?grant_type=refresh_token`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: import.meta.env.VITE_API_KEY,
+      },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+      credentials: "include",
+    }
+  );
 
   if (!res.ok) throw new Error("Refresh failed");
 
@@ -36,6 +51,7 @@ const refreshAccessToken = async () => {
 
   return data.access_token;
 };
+
 const request = async (endpoint: string, options: RequestInit = {}) => {
   const token = getCookie("access_token");
 
@@ -54,25 +70,31 @@ const request = async (endpoint: string, options: RequestInit = {}) => {
 
   let res = await makeRequest(token);
 
+ 
   if (res.status === 401 || res.status === 403) {
     try {
       const newToken = await refreshAccessToken();
       res = await makeRequest(newToken);
-    } catch (err) {
+    } catch (err: unknown) {
       document.cookie = "access_token=; Max-Age=0";
       document.cookie = "refresh_token=; Max-Age=0";
 
       window.location.href = "/login";
-      throw err;
+
+      if (err instanceof Error) {
+        throw err;
+      }
+
+      throw new Error("Unknown refresh error");
     }
   }
 
   const data = await safeJson(res);
 
   if (!res.ok) {
-    const err = new Error(
+    const err: ApiError = new Error(
       data?.msg || data?.message || "API error"
-    ) as unknown;
+    );
 
     err.response = {
       status: res.status,
@@ -84,6 +106,7 @@ const request = async (endpoint: string, options: RequestInit = {}) => {
 
   return data;
 };
+
 
 export const api = {
   get: (url: string) => request(url),

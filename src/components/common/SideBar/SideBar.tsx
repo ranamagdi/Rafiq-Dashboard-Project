@@ -26,7 +26,7 @@ type IconProps = {
 
 type NavItem = {
   label: string;
-  path: string;
+  path?: string;
   icon: React.ComponentType<IconProps>;
   responsiveIcon?: React.ComponentType<IconProps>;
 };
