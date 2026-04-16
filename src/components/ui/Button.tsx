@@ -35,7 +35,7 @@ const Button = ({
       fontWeight: "var(--headline-lg-weight)",
       border: "none",
       height: "40px",
-      width: "100%",
+     
       boxShadow: "0px 1px 2px #0000000D",
       cursor: disabled ? "not-allowed" : "pointer",
       opacity: disabled ? 0.6 : 1,

@@ -1,4 +1,5 @@
-
+//images
+import projectEmpty from './images/Abstract _Kinetic Blueprint_ Visual Element.png'
 // icons
 import dashboard from "./icons/dashboard.svg";
 import settings from "./icons/settings.svg";
@@ -21,6 +22,9 @@ import lockForgot from "./icons/lock-forgot.svg";
 import clock from "./icons/clock.svg";
 import filledIconCheck from "./icons/filled-iconcheck.svg"
 
+export const IMAGES = {
+    projectEmpty
+}
 
 export const ICONS = {
   dashboard,
@@ -42,5 +46,6 @@ export const ICONS = {
   eye,
   backArrow,
   lockForgot,
-  filledIconCheck
+  filledIconCheck,
+
 };

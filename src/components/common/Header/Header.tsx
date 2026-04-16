@@ -1,12 +1,13 @@
-
 import { useCookie } from "../../../hooks/useCookie";
-import './Header.css'
+import "./Header.css";
 import { useAppSelector } from "../../../hooks/reduxHooks";
-import Logo from '/favicon.svg'
+import Logo from "/favicon.svg";
+import useIsMobile from "../../../hooks/useIsMobile";
 
 const Header = () => {
   const { getCookie } = useCookie();
-
+  const isMobile = useIsMobile();
+  const isSidebarOpen = useAppSelector((state) => state.slider.isSidebarOpen);
   const accessToken = getCookie("access_token");
 
   const user = useAppSelector((state) => state.user.userMetaData);
@@ -29,24 +30,20 @@ const Header = () => {
     <header className={accessToken ? "border-b border-gray-200" : ""}>
       <nav className="mx-auto flex items-center justify-between p-6">
         <div className="flex lg:flex-1">
-          
-          <a href="#" className="flex items-center justify-between gap-2 ">
-        
-            <img src={Logo} alt="Your Company" className="h-8 w-auto" />
-          
-            <span className="logo-name">
-            TASKLY
-          </span>
-          </a>
+          {!isMobile  && !isSidebarOpen && (
+            <a href="#" className="flex items-center justify-between gap-2 ">
+              <img src={Logo} alt="Your Company" className="h-8 w-auto" />
+
+              <span className="logo-name">TASKLY</span>
+            </a>
+          )}
         </div>
 
         {accessToken && user && (
           <div className="flex items-center gap-3">
-            <div className="text-right">
+            <div className="text-center">
               <p className="userName">{user.name}</p>
-              <p className="userDepartment uppercase">
-                {user.department}
-              </p>
+              <p className="userDepartment uppercase">{user.department}</p>
             </div>
 
             <div className="w-10 h-10 flex items-center justify-center container-name ">

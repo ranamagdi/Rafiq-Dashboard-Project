@@ -4,6 +4,7 @@
     font-weight: var(--label-sm-weight);
     line-height: 20px;
 }
+
 .userDepartment{
      line-height: 20px;
      color: var(--color-primary);
