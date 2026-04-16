@@ -39,9 +39,9 @@ const navItems: NavItem[] = [
     responsiveIcon: ProjectsIconResponsive,
   },
   { label: "Project Epics", icon: EpicsIcon , path: "/dashboard/projects"},
-  { label: "Project Tasks", icon: TasksIcon, path: "/dashboard/projects" },
-  { label: "Project Members", icon: MembersIcon, path: "/dashboard/projects" },
-  { label: "Project Details", icon: DetailsIcon , path: "/dashboard/projects"},
+  { label: "Project Tasks", icon: TasksIcon, path: "#" },
+  { label: "Project Members", icon: MembersIcon, path: "#" },
+  { label: "Project Details", icon: DetailsIcon , path: "#"},
 ];
 
 export default function Sidebar() {
