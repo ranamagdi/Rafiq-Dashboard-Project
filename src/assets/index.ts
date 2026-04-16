@@ -12,7 +12,7 @@ import mail from "./icons/mail.svg";
 import monitoring from "./icons/monitoring.svg";
 import rocket from "./icons/rocket.svg";
 import shield from "./icons/shield.svg";
-import iconchecked from "./icons/icon-checked.svg";
+import iconchecked from "./icons/icon-check.svg";
 import lock from "./icons/lock.svg";
 import mailgrey from "./icons/mail-grey.svg";
 import arrow from "./icons/arrow.svg";
