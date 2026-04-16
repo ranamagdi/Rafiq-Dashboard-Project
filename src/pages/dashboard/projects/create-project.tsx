@@ -5,6 +5,7 @@ import "./projects.css";
 import { createProject } from "../../../services/endpoints";
 import { useForm } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 
@@ -23,6 +24,7 @@ const projectSchema = z.object({
 type ProjectFormValues = z.infer<typeof projectSchema>;
 
 export default function Projects() {
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -37,39 +39,53 @@ export default function Projects() {
     message: string;
   }>({ type: null, message: "" });
   const descriptionValue = watch("description") ?? "";
-const handleSubmitForm: SubmitHandler<ProjectFormValues> = async (data) => {
-  try {
-    const res = await createProject({
-      name: data.name,
-      description: data.description ?? "",
-    });
+  const handleSubmitForm: SubmitHandler<ProjectFormValues> = async (data) => {
+    try {
+      const res = await createProject({
+        name: data.name,
+        description: data.description ?? "",
+      });
 
-    console.log("SUCCESS RESPONSE:", res); 
+      console.log("SUCCESS RESPONSE:", res);
 
-    reset();
+      reset();
 
-    setStatus({
-      type: "success",
-      message: "Project created successfully",
-    });
+      setStatus({
+        type: "success",
+        message: "Project created successfully",
+      });
+    } catch (err: unknown) {
+      console.log("ERROR:", err);
 
-  } catch (err: unknown) {
-    console.log("ERROR:", err);
+      const message =
+        err?.response?.data?.message || err?.message || "Something went wrong";
 
-    const message =
-      err?.response?.data?.message ||
-      err?.message ||
-      "Something went wrong";
-
-    setStatus({
-      type: "error",
-      message: `Failed to create project: ${message}`,
-    });
-  }
-};
+      setStatus({
+        type: "error",
+        message: `Failed to create project: ${message}`,
+      });
+    }
+  };
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-9">
-      <div className="hidden grid-cols-12 items-center mt-4 md:grid">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
+      <div className="md:flex items-center gap-2 mt-5 hidden ">
+        <p
+          onClick={() => navigate("/dashboard/projects")}
+          className="text-[#43465499] text-[12px] font-bold uppercase cursor-pointer hover:text-[#003D9B]"
+        >
+          Projects
+        </p>
+
+        <span className="text-[#43465466] text-[12px] font-bold">&gt;</span>
+
+        <p
+          onClick={() => navigate("/dashboard/create-project")}
+          className="text-[#003D9B] text-[12px] font-bold uppercase cursor-pointer"
+        >
+          Add New Project
+        </p>
+      </div>
+      <div className="hidden grid-cols-12 items-center md:grid">
         <div className="col-span-12 md:col-span-10 ">
           <h2 className="text-[#041B3C] text-[30px] font-semibold ">
             Add New Project
@@ -118,13 +134,21 @@ const handleSubmitForm: SubmitHandler<ProjectFormValues> = async (data) => {
         </div>
         {status.type && (
           <div
-            className={`p-3 rounded-sm text-sm border transition-all ${
+            className={`relative p-3 pr-10 rounded-sm text-sm border transition-all mt-5 ${
               status.type === "success"
                 ? "bg-green-50 text-green-700 border-green-200"
                 : "bg-red-50 text-red-700 border-red-200"
             }`}
           >
             {status.message}
+
+            <button
+              type="button"
+              onClick={() => setStatus({ type: null, message: "" })}
+              className="absolute top-2 right-2 text-lg leading-none text-gray-500 hover:text-gray-800"
+            >
+              ×
+            </button>
           </div>
         )}
         <form className="auth-form" onSubmit={handleSubmit(handleSubmitForm)}>

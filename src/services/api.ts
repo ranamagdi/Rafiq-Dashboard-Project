@@ -5,6 +5,14 @@ const getCookie = (name: string) => {
     .find((row) => row.startsWith(name + "="))
     ?.split("=")[1];
 };
+const safeJson = async (res: Response) => {
+  const text = await res.text();
+  try {
+    return text ? JSON.parse(text) : null;
+  } catch {
+    return null;
+  }
+};
 const refreshAccessToken = async () => {
   const refreshToken = getCookie("refresh_token");
 
@@ -46,15 +54,11 @@ const request = async (endpoint: string, options: RequestInit = {}) => {
 
   let res = await makeRequest(token);
 
-  // ✅ If token expired → try refresh
   if (res.status === 401 || res.status === 403) {
     try {
       const newToken = await refreshAccessToken();
-
-      // retry with new token
       res = await makeRequest(newToken);
     } catch (err) {
-      // ❌ refresh failed → logout user
       document.cookie = "access_token=; Max-Age=0";
       document.cookie = "refresh_token=; Max-Age=0";
 
@@ -63,17 +67,22 @@ const request = async (endpoint: string, options: RequestInit = {}) => {
     }
   }
 
+  const data = await safeJson(res);
+
   if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
     const err = new Error(
-      error.msg || error.message || "API error"
+      data?.msg || data?.message || "API error"
     ) as unknown;
 
-    err.response = { status: res.status, data: error };
+    err.response = {
+      status: res.status,
+      data,
+    };
+
     throw err;
   }
 
-  return res.json();
+  return data;
 };
 
 export const api = {

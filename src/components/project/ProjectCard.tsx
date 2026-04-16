@@ -6,7 +6,17 @@ type ProjectCardProps = {
   className?:string;
   variant?: "default" | "add";
 };
+const formatDate = (dateString?: string) => {
+  if (!dateString) return "";
 
+  const date = new Date(dateString);
+
+  const day = date.getDate();
+  const month = date.toLocaleString("en-US", { month: "short" });
+  const year = date.getFullYear();
+
+  return `${day}/${month}/${year}`;
+};
 export default function ProjectCard({
   title,
   description,
@@ -20,7 +30,7 @@ export default function ProjectCard({
       <div
         onClick={onClick}
         className={`
-        bg-white rounded-lg p-24
+        bg-white rounded-lg p-8
           border-2 border-dashed border-[#C3C6D633]
         hover:shadow-md transition cursor-pointer
         flex flex-col gap-2 text-center items-center
@@ -70,16 +80,35 @@ export default function ProjectCard({
         </p>
       )}
       <hr className="mt-7 mb-3 border border-[#C3C6D6]/15" />
-      {createdAt && (
-        <div className="flex justify-between items-center mt-2">
-          <span className="text-[11px] font-bold text-[#737685] uppercase">
-            Created at
-          </span>
-          <span className="text-[14px] font-medium text-[#434654]">
-            {createdAt}
-          </span>
-        </div>
-      )}
+   {createdAt && (
+  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-2 gap-2">
+    
+
+    <span className="text-[11px] font-bold text-[#737685] uppercase">
+      Created at
+    </span>
+
+    <div className="flex items-center gap-2 text-[14px] font-medium text-[#434654]">
+      
+    
+      <svg
+        className="sm:hidden"
+        width="11"
+        height="12"
+        viewBox="0 0 11 12"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M1.16667 11.6667C0.845833 11.6667 0.571181 11.5524 0.342708 11.324C0.114236 11.0955 0 10.8208 0 10.5V2.33333C0 2.0125 0.114236 1.73785 0.342708 1.50937C0.571181 1.2809 0.845833 1.16667 1.16667 1.16667H1.75V0H2.91667V1.16667H7.58333V0H8.75V1.16667H9.33333C9.65417 1.16667 9.92882 1.2809 10.1573 1.50937C10.3858 1.73785 10.5 2.0125 10.5 2.33333V10.5C10.5 10.8208 10.3858 11.0955 10.1573 11.324C9.92882 11.5524 9.65417 11.6667 9.33333 11.6667H1.16667ZM1.16667 10.5H9.33333V4.66667H1.16667V10.5ZM1.16667 3.5H9.33333V2.33333H1.16667V3.5ZM1.16667 3.5V2.33333V3.5Z"
+          fill="#434654"
+        />
+      </svg>
+
+      <span>{formatDate(createdAt)}</span>
+    </div>
+  </div>
+)}
     </div>
   );
 }

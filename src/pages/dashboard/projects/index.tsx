@@ -12,7 +12,7 @@ export default function Projects() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate =useNavigate()
+  const navigate = useNavigate();
   const hasFetched = useRef(false);
   useEffect(() => {
     if (hasFetched.current) return;
@@ -21,7 +21,9 @@ export default function Projects() {
     const fetchProjects = async () => {
       try {
         const res = await getProjects();
-        setProjects(res?.data || []);
+        const data = Array.isArray(res) ? res : res?.data || [];
+
+        setProjects(data);
       } catch (err) {
         console.error("Failed to fetch projects:", err);
         setError(err);
@@ -35,34 +37,39 @@ export default function Projects() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-9 ">
-      {!error && projects.length !== 0 &&
-      <div className="grid grid-cols-12 items-center mt-4">
-        <div className="col-span-12 md:col-span-10">
-          <h2 className="text-[#041B3C] text-[30px] font-semibold">Projects</h2>
-          <p className="text-[#434654] text-[14px] font-normal">
-            Manage and curate your projects
-          </p>
-        </div>
+      {!error && projects.length !== 0 && (
+        <div className="grid grid-cols-12 items-center mt-4">
+          <div className="col-span-12 md:col-span-10">
+            <h2 className="text-[#041B3C] text-[30px] font-semibold">
+              Projects
+            </h2>
+            <p className="text-[#434654] text-[14px] font-normal">
+              Manage and curate your projects
+            </p>
+          </div>
 
-        <div className="col-span-12 md:col-span-2 justify-end hidden sm:flex">
-          <Button className="flex justify-center gap-2 items-center" onClick={() => navigate("/dashboard/create-project")}>
-            <svg
-              width="11"
-              height="11"
-              viewBox="0 0 11 11"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+          <div className="col-span-12 md:col-span-2 justify-end hidden sm:flex">
+            <Button
+              className="flex justify-center gap-2 items-center"
+              onClick={() => navigate("/dashboard/create-project")}
             >
-              <path
-                d="M4.5 6H0V4.5H4.5V0H6V4.5H10.5V6H6V10.5H4.5V6Z"
-                fill="white"
-              />
-            </svg>
-            Create New Project
-          </Button>
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 11 11"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M4.5 6H0V4.5H4.5V0H6V4.5H10.5V6H6V10.5H4.5V6Z"
+                  fill="white"
+                />
+              </svg>
+              Create New Project
+            </Button>
+          </div>
         </div>
-      </div>
-}
+      )}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -104,7 +111,10 @@ your first architectural workspace to begin tracking
 tasks and epics.
 Create New Project"
         >
-          <Button className="flex items-center gap-2 justify-center align-middle"  onClick={() => navigate("/dashboard/create-project")}>
+          <Button
+            className="flex items-center gap-2 justify-center align-middle"
+            onClick={() => navigate("/dashboard/create-project")}
+          >
             <svg
               width="20"
               height="20"
@@ -125,10 +135,10 @@ Create New Project"
           {projects.map((project, index) => (
             <ProjectCard
               key={project.id || index}
-              title={project.title}
+              title={project.name}
               description={project.description}
-              createdAt={project.createdAt}
-              onClick={() => console.log("open project", project.title)}
+              createdAt={project.created_at}
+            
             />
           ))}
 
