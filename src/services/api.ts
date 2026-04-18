@@ -64,7 +64,7 @@ const request = async (endpoint: string, options: RequestInit = {}) => {
         ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
         ...options.headers,
       },
-      credentials: "include",
+      credentials: "omit",
     });
   };
 
