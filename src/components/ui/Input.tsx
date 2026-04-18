@@ -2,8 +2,7 @@ import React from "react";
 
 type Props = {
   isValid?: boolean;
-  placeholder?: string;
-  type?: string;
+
   icon?: string;
  specialStyle?:string;
 
@@ -11,13 +10,12 @@ type Props = {
 } & React.InputHTMLAttributes<HTMLInputElement>;
 
 const Input = React.forwardRef<HTMLInputElement, Props>(
-  ({ isValid = true, placeholder, type, icon,hideIconOnMd,specialStyle, ...rest }, ref) => {
+  ({ isValid = true, icon,hideIconOnMd,specialStyle, ...rest }, ref) => {
     return (
       <div className="relative w-full mt-1">
         <input
           ref={ref}
-          type={type}
-          placeholder={placeholder}
+  
           className={`
             w-full h-11 rounded-sm outline-none border-none
             pr-10 pl-4
