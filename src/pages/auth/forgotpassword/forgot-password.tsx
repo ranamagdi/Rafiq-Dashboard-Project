@@ -121,7 +121,7 @@ const ForgotPassword = () => {
             )}
           </div>
 
-          <Button disabled={isSubmitting} type="submit">
+          <Button disabled={isSubmitting} type="submit" className="w-full">
             {isSubmitting ? "Sending reset link..." : "Send Reset Link"}
           </Button>
         </form>
@@ -157,7 +157,7 @@ const ForgotPassword = () => {
                   disabled={isResendDisabled}
                   backGround="var(--color-surface-low)"
                   color="#737685"
-                  className="flex justify-center gap-2 mt-3"
+                  className="flex justify-center gap-2 mt-3 w-full"
                 >
                   <img src={ICONS.clock} alt="clock" />
                   {resendAttempts >= 3 ? (

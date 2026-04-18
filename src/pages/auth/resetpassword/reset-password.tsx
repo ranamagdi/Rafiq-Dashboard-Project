@@ -137,7 +137,7 @@ const ResetPassword = () => {
             Invalid or expired reset link. Please request a new password reset.
           </p>
           <button
-            className="cursor-pointer mt-6 text-sm"
+            className="cursor-pointer mt-6 text-sm w-full"
             style={{ color: "var(--color-primary)" }}
             onClick={() => navigate("/forgot-password")}
           >

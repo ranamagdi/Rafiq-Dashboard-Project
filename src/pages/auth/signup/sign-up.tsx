@@ -223,7 +223,7 @@ const Signup = () => {
             ))}
           </div>
 
-          <Button disabled={isSubmitting} type="submit">
+          <Button disabled={isSubmitting} type="submit" className="w-full"> 
             {isSubmitting ? "Creating account..." : "Create account"}
           </Button>
         </form>

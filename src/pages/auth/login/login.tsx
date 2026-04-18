@@ -156,14 +156,15 @@ const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
             </span>
           </div>
           <Button
-            className="login-disktop"
+            className="login-disktop w-full"
             disabled={isSubmitting}
             type="submit"
+
           >
             {isSubmitting ? "Logging in..." : "Log In"}
           </Button>
           <Button
-            className="flex items-center gap-2 justify-center login-responsive"
+            className="flex items-center gap-2 justify-center login-responsive w-full"
             type="submit"
             disabled={isSubmitting}
           >
