@@ -4,7 +4,7 @@ import { useState } from "react";
 import "./projects.css";
 import { createProject } from "../../../services/endpoints";
 import { useForm } from "react-hook-form";
-import type { SubmitHandler } from "react-hook-form";
+import { useWatch, type SubmitHandler } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
@@ -36,7 +36,7 @@ export default function Projects() {
     register,
     handleSubmit,
     reset,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
@@ -45,7 +45,11 @@ export default function Projects() {
     type: "success" | "error" | null;
     message: string;
   }>({ type: null, message: "" });
-  const descriptionValue = watch("description") ?? "";
+  const descriptionValue = useWatch({
+    control,
+    name: "description",
+    defaultValue: "",
+  });
   const handleSubmitForm: SubmitHandler<ProjectFormValues> = async (data) => {
     try {
       const res = await createProject({
@@ -201,7 +205,7 @@ export default function Projects() {
                 {...register("description")}
               />
               <span className="absolute bottom-3 right-4 text-[#4F5F7B99] text-[11px] pointer-events-none">
-                {descriptionValue.length} / 500 characters
+                {(descriptionValue ?? "").length} / 500 characters
               </span>
             </div>
 

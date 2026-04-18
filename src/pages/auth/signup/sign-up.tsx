@@ -3,7 +3,7 @@ import { ICONS } from "../../../assets/index";
 import Input from "../../../components/ui/Input";
 import Button from "../../../components/ui/Button";
 import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm,useWatch } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
@@ -57,14 +57,18 @@ const Signup = () => {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     mode: "onChange",
     resolver: zodResolver(signUpSchema),
   });
 
-  const password = watch("password", "");
+  const password = useWatch({
+    control,
+    name: "password",
+    defaultValue: "",
+  });
 
   const passwordChecks = {
     minLength: password.length >= 8,
