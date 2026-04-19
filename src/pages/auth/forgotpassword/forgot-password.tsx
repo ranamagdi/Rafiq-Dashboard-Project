@@ -14,7 +14,7 @@ const ForgotPassword = () => {
   const navigate = useNavigate();
   const [successMessage, setSuccessMessage] = useState(false);
   const [timer, setTimer] = useState(0);
-  const [resendAttempts, setResendAttempts] = useState(0); 
+  const [resendAttempts, setResendAttempts] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -55,9 +55,17 @@ const ForgotPassword = () => {
       await forgotPassword(data.email);
       setSuccessMessage(true);
       setTimer(300);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      const msg = error?.response?.data?.msg;
+    } catch (error: unknown) {
+      const err = error as {
+        response?: {
+          data?: {
+            msg?: string;
+          };
+        };
+      };
+
+      const msg = err.response?.data?.msg;
+
       setErrorMessage(msg || "Something went wrong, please try again.");
     }
   };
@@ -67,13 +75,18 @@ const ForgotPassword = () => {
     try {
       setErrorMessage(null);
       await forgotPassword(getValues("email"));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      const msg =
-        error?.response?.data?.msg ||
-        error?.message ||
-        "Something went wrong, please try again.";
-      setErrorMessage(msg);
+      
+    } catch (error: unknown) {
+       const err = error as {
+        response?: {
+          data?: {
+            msg?: string;
+          };
+        };
+      };
+      const msg = err.response?.data?.msg;
+
+      setErrorMessage(msg || "Something went wrong, please try again.");
     } finally {
       setTimer(300);
       setResendAttempts((prev) => prev + 1);
