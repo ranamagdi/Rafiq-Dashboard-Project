@@ -215,7 +215,7 @@ const ResetPassword = () => {
                 <div className="relative">
                   <Input
                     type={show ? "text" : "password"}
-                    specialStyle="specialStyle"
+                    specialStyle="special-style"
                     placeholder="Enter password"
                     {...register("password")}
                   />

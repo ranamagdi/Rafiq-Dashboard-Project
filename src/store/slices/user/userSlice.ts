@@ -24,19 +24,12 @@ const userSlice = createSlice({
   reducers: {
     setUserMetaData: (state, action: PayloadAction<UserMetaData>) => {
       state.userMetaData = action.payload;
-
-    
-      localStorage.setItem("user", JSON.stringify(action.payload));
     },
 
     clearUserMetaData: (state) => {
       state.userMetaData = null;
-
-    
-      localStorage.removeItem("user");
     },
   },
 });
-
 export const { setUserMetaData, clearUserMetaData } = userSlice.actions;
 export default userSlice.reducer;

@@ -1,4 +1,5 @@
 import { useCookie } from "../../../hooks/useCookie";
+
 import { useAppSelector } from "../../../hooks/reduxHooks";
 import Logo from "/favicon.svg";
 import useIsMobile from "../../../hooks/useIsMobile";
@@ -24,41 +25,31 @@ const Header = () => {
   };
 
   const initials = getInitials(user?.name);
-
+const showLogo =
+  (!isMobile && !isSidebarOpen) ||
+  (!accessToken && !isSidebarOpen && isMobile);
   return (
     <header className={accessToken ? "border-b border-gray-200" : ""}>
       <nav className="mx-auto flex items-center justify-between p-6">
         <div className="flex lg:flex-1">
-          {!isMobile && !isSidebarOpen && (
-            <a href="#" className="flex items-center justify-between gap-2 ">
-              <img src={Logo} alt="Your Company" className="h-8 w-auto" />
-
-              <span className="logo-name">TASKLY</span>
-            </a>
-          )}
+                 {showLogo && (
+          <a href="#" className="flex items-center gap-2">
+            <img src={Logo} alt="Your Company" className="h-8 w-auto" />
+            <span className="logo-name">TASKLY</span>
+          </a>
+        )}
         </div>
 
         {accessToken && user && (
           <div className="flex items-center gap-3">
             <div className="text-center">
-              <p className="text-(--color-slate-dark-blue) font-(--label-sm-weight) leading-5">
-                {user.name}
-              </p>
-              <p className="uppercase text-(--color-primary) font-(--label-sm-weight) text-[10px] leading-5">
+              <p>{user.name}</p>
+              <p className="uppercase text-xs text-(--color-primary)">
                 {user.department}
               </p>
             </div>
 
-            <div
-              className="w-10 h-10 flex items-center justify-center
-              rounded-(--radius-form)
-              bg-(--color-primary-container)
-              shadow-[0px_1px_2px_0px_#0000000D]
-              text-white
-              leading-6
-              font-(--label-sm-weight)
-              text-[16px]"
-            >
+            <div className="w-10 h-10 flex items-center justify-center rounded bg-(--color-primary) text-white">
               {initials}
             </div>
           </div>

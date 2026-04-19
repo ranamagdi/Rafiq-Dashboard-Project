@@ -81,7 +81,7 @@ button{
   line-height: 28px;
   letter-spacing: -0.5px;
 }
-.specialStyle {
+.special-style {
   background-color: var(--color-special-feild);
   border: 1px solid #c3c6d64d;
 }
