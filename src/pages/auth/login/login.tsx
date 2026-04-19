@@ -216,7 +216,7 @@ const Login = () => {
           </div>
 
           <Button
-            className="hidden md:flex w-full mt-2  items-center gap-2 justify-center"
+            className="hidden md:flex w-full mt-4  items-center gap-2 justify-center"
             disabled={isSubmitting}
             type="submit"
           >
@@ -225,7 +225,7 @@ const Login = () => {
 
          
           <Button
-            className="flex md:hidden items-center gap-2 justify-center  w-full mt-2 "
+            className="flex md:hidden items-center gap-2 justify-center  w-full mt-4 "
             type="submit"
             disabled={isSubmitting}
           >

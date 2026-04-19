@@ -1,65 +1,45 @@
 import React from "react";
+import { cn } from "../utils/cn";
 
 type Props = {
   variant?: "primary" | "text";
-  color?: string;
-  fontSize?: string;
-  fontWeight?: string;
-  children: React.ReactNode;
   className?: string;
-  backGround?:string
+  backGround?: string; 
+  children: React.ReactNode;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 const Button = ({
   variant = "primary",
-  color,
-  fontSize,
-  fontWeight,
-  children,
   className,
   disabled,
   backGround,
+  children,
   type = "button",
   ...rest
 }: Props) => {
-  let style: React.CSSProperties = {};
+  const base = "h-10 px-6 rounded-sm text-sm font-semibold transition flex items-center justify-center";
 
-  if (variant === "primary") {
-    style = {
-      background:backGround||
-        "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%)",
-      color: color || "#fff",
-      padding: "10px 24px",
-      borderRadius: "4px",
-      fontSize: "var(--body-md-size)",
-      fontWeight: "var(--headline-lg-weight)",
-      border: "none",
-      height: "40px",
-     
-      boxShadow: "0px 1px 2px #0000000D",
-      cursor: disabled ? "not-allowed" : "pointer",
-      opacity: disabled ? 0.6 : 1,
-    };
-  } else {
-    style = {
-      background: "transparent",
-      color: color || "var(--color-primary)",
-      padding: "10px 24px",
-      fontSize: fontSize || "var(--body-md-size)",
-      fontWeight: fontWeight || "var(--headline-lg-weight)",
-      border: "none",
-      height: "40px",
-      cursor: disabled ? "not-allowed" : "pointer",
-      opacity: disabled ? 0.6 : 1,
-    };
-  }
+  const variants = {
+    primary:
+      "text-white shadow-[0px_1px_2px_0px_#0000000D] bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-container)]",
+    text: "bg-transparent text-[var(--color-primary)]",
+  };
 
   return (
     <button
-      style={style}
-      className={className}
-      disabled={disabled}
       type={type}
+      disabled={disabled}
+      className={cn(
+        base,
+        variants[variant],
+        disabled && "opacity-60 cursor-not-allowed",
+        className
+      )}
+      style={
+        backGround
+          ? { background: backGround }
+          : undefined
+      }
       {...rest}
     >
       {children}
