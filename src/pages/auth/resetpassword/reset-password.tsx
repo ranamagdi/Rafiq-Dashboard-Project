@@ -1,9 +1,9 @@
-import "../authStyle.css";
+
 import { ICONS } from "../../../assets/index";
 import Input from "../../../components/ui/Input";
 import Button from "../../../components/ui/Button";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useForm,useWatch } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
@@ -135,8 +135,18 @@ const ResetPassword = () => {
   if (!accessToken) {
     return (
       <div className="flex items-center justify-center pb-12">
-        <div className="auth-container auth-container-reset">
-          <h3 className="h3-auth-container">Invalid Reset Link</h3>
+        <div
+          className="
+          flex flex-col
+          bg-white
+          shadow-[0px_24px_48px_0px_#041b3c0f]
+          rounded-(--radius-form)
+          max-w-119
+          mx-auto
+          p-12
+        "
+        >
+          <h3 className="text-[30px] font-(--headline-lg-weight) text-(--color-slate-dark-blue) leading-9">Invalid Reset Link</h3>
           <p className="mt-4 text-red-500 text-sm">
             Invalid or expired reset link. Please request a new password reset.
           </p>
@@ -153,14 +163,26 @@ const ResetPassword = () => {
   }
   return (
     <div className="flex items-center justify-center pb-12">
-      <div className="auth-container auth-container-reset">
-        <h3 className="h3-auth-container">Create A New Password</h3>
-        <p className="h3-auth-container">
+      <div className="
+    flex flex-col
+    bg-white
+    shadow-[0px_24px_48px_0px_#041b3c0f]
+    rounded-(--radius-form)
+    max-w-119
+    mx-auto
+    p-12
+  ">
+        <h3 className="text-[30px] font-(--headline-lg-weight) text-(--color-slate-dark-blue) leading-9">Create A New Password</h3>
+        <p className="text-[14px] text-(--color-slate-medium-blue) leading-5">
           Create a new, strong password to secure your workstation access.
         </p>
         {errorMessage ? (
           <div className="mt-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-600 text-sm flex items-center justify-between">
-            <span>{errorMessage}</span>
+            <span className="text-(length:--label-sm-size)
+            font-(--body-md-weight)
+            text-(--color-slate-medium-blue)
+            uppercase
+            mb-3">{errorMessage}</span>
 
             <button
               onClick={() => setErrorMessage(null)}
@@ -171,19 +193,23 @@ const ResetPassword = () => {
           </div>
         ) : successMessage ? (
           <div className="mt-5 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-green-600 text-sm flex items-center justify-between">
-            <span>{successMessage}</span>
+            <span className="text-(length:--label-sm-size)
+  font-(--body-md-weight)
+  text-(--color-slate-medium-blue)
+  uppercase
+  mb-3">{successMessage}</span>
           </div>
         ) : null}
-        <div className="auth-container-form">
+        <div className="bg-transparent">
           <form
-            className="auth-form "
+            className="flex flex-col items-start text-left pt-10 pb-4 w-full"
             onSubmit={handleSubmit(handleSubmitForm)}
             style={{
               opacity: successMessage ? 0.6 : 1,
               pointerEvents: successMessage ? "none" : "auto",
             }}
           >
-            <div className="form-section ">
+            <div className="mb-5 w-full">
               <div>
                 <label>New Password</label>
                 <div className="relative">
@@ -232,7 +258,7 @@ const ResetPassword = () => {
               </div>
             </div>
 
-            <div className="form-section ">
+            <div className="mb-5 w-full">
               <div>
                 <label>Confirm Password</label>
                 <Input
@@ -249,8 +275,13 @@ const ResetPassword = () => {
               </div>
             </div>
 
-            <div className="form-section verification-reset ">
-              <p className="verification-reset-title">Security Requirements</p>
+            <div className="mb-5 w-full  p-4
+                rounded-(--radius-form)
+                bg-(--color-special-feild)
+                border border-[#c3c6d64d] ">
+              <p className="text-(length:--label-sm-size)
+                  font-(--label-sm-weight)
+                  text-(--color-forms-texts)">Security Requirements</p>
               <hr className="mt-4 border border-[#C3C6D6]/15" />
               <div className="flex flex-wrap justify-between items-center gap-3 mt-3">
                 {checks.map(({ passed, label }) => (
@@ -278,7 +309,7 @@ const ResetPassword = () => {
                         </>
                       )}
                     </div>
-                    <p className={passed ? "pass-label" : "not-pass-label"}>
+                    <p className={passed ? "text-(--color-slate-dark-blue)" : "text-(--color-forms-texts)"} >
                       {label}
                     </p>
                   </label>
@@ -286,13 +317,18 @@ const ResetPassword = () => {
               </div>
             </div>
 
-            <Button disabled={isSubmitting} type="submit" className="mt-3">
+            <Button disabled={isSubmitting} type="submit" className="mt-3 w-full">
               {isSubmitting ? "Updating..." : "Update Password"}
             </Button>
           </form>
-          <p className="text-center auth-text">
+          <p className="text-center text-(length:--body-md-size)
+            font-(--body-md-weight)
+            text-(--color-slate-medium-blue)
+            leading-5
+            mt-4">
             <span
-              className="text-primary cursor-pointer"
+            
+              className="text-(--color-primary) cursor-pointer "
               onClick={() => navigate("/login")}
             >
               Back to Sign In

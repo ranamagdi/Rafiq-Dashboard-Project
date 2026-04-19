@@ -1,12 +1,12 @@
 import "./App.css";
 import AppRoutes from "./routes";
 import Header from "./components/common/Header/Header";
-import AuthInitializer from "./components/authInitializer";
+
 
 import { useEffect, useRef } from "react";
 import { getUser } from "./services/endpoints";
 import { useAppDispatch } from "./hooks/reduxHooks";
-import { setUserMetaData } from "./features/user/userSlice";
+import { setUserMetaData } from "./store/slices/user/userSlice";
 import { useCookie } from "./hooks/useCookie";
 
 function App() {
@@ -40,7 +40,7 @@ function App() {
 
   return (
     <div className="App">
-      <AuthInitializer />
+  
       <Header />
       <AppRoutes />
     </div>

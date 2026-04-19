@@ -1,9 +1,9 @@
-import "../authStyle.css";
+
 import { ICONS } from "../../../assets/index";
 import Input from "../../../components/ui/Input";
 import Button from "../../../components/ui/Button";
 import { useNavigate } from "react-router-dom";
-import { useForm,useWatch } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
@@ -11,7 +11,7 @@ import { signUp } from "../../../services/endpoints";
 import { useState } from "react";
 import { useCookie } from "../../../hooks/useCookie";
 import { useAppDispatch } from "../../../hooks/reduxHooks";
-import { setUserMetaData } from "../../../features/user/userSlice";
+import { setUserMetaData } from "../../../store/slices/user/userSlice";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -88,30 +88,40 @@ const Signup = () => {
         },
       });
       const { access_token, refresh_token, user } = response.data;
-   
-       setCookie("access_token", access_token);
-    setCookie("refresh_token", refresh_token);
 
-        dispatch(setUserMetaData(user.user_metadata)); 
+      setCookie("access_token", access_token);
+      setCookie("refresh_token", refresh_token);
 
-    console.log("User Meta Data:", user.user_metadata);
+      dispatch(setUserMetaData(user.user_metadata));
+
+      console.log("User Meta Data:", user.user_metadata);
 
       navigate("/dashboard");
       console.log("Sign up successful:", response.data);
-   } catch (error) {
-  if (error instanceof Error) {
-    setErrorMessage(error.message)
-  } else {
-    setErrorMessage("An error occurred during sign up")
-  }
-}
+    } catch (error) {
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("An error occurred during sign up");
+      }
+    }
   };
 
   return (
     <div className="flex items-center justify-center pb-12">
-      <div className="auth-container">
-        <h3 className="text-center">Create your workspace</h3>
-        <p className="text-center">
+      <div
+        className="flex flex-col
+      md:bg-white bg-transparent
+      md:shadow-[0px_24px_48px_0px_#041b3c0f] shadow-none
+      md:rounded-(--radius-form) rounded-none
+      max-w-full md:max-w-xl
+      mx-auto
+      p-2 md:p-12"
+      >
+        <h3 className="text-center text-[30px] font-(--headline-lg-weight) text-(--color-slate-dark-blue) leading-9">
+          Create your workspace
+        </h3>
+        <p className="text-center text-sm text-(--color-slate-medium-blue) mt-2">
           Join the editorial approach to task management.
         </p>
         {errorMessage && (
@@ -126,9 +136,17 @@ const Signup = () => {
             </button>
           </div>
         )}
-        <form className="auth-form" onSubmit={handleSubmit(handleSubmitForm)}>
-          <div className="form-section">
-            <label>Name</label>
+        <form className="flex flex-col items-start text-left pt-10 pb-4 w-full" onSubmit={handleSubmit(handleSubmitForm)}>
+          <div className="mb-5 w-full">
+            <label className={`
+                  text-(length:--label-sm-size)
+                  font-(--label-sm-weight)
+                  text-(--color-slate-medium-blue)
+                  uppercase mb-3
+                  ${errors.name ? "text-(--color-error)" : ""}
+                `}>
+              Name
+            </label>
             <Input
               type="text"
               placeholder="Enter your full name"
@@ -139,8 +157,16 @@ const Signup = () => {
             )}
           </div>
 
-          <div className="form-section">
-            <label>Email</label>
+          <div className="mb-5 w-full">
+            <label className={`
+                  text-(length:--label-sm-size)
+                  font-(--label-sm-weight)
+                  text-(--color-slate-medium-blue)
+                  uppercase mb-3
+                  ${errors.email ? "text-(--color-error)" : ""}
+                `}>
+              Email
+            </label>
             <Input
               type="text"
               placeholder="yourname@company.com"
@@ -151,9 +177,19 @@ const Signup = () => {
             )}
           </div>
 
-          <div className="form-section">
-            <label>
-              Job Title <span>(optional)</span>
+          <div className="mb-5 w-full">
+            <label className={`
+                  text-(length:--label-sm-size)
+                  font-(--label-sm-weight)
+                  text-(--color-slate-medium-blue)
+                  uppercase mb-3
+                  ${errors.department ? "text-(--color-error)" : ""}
+                `}>
+              Job Title <span className=" text-(length:--label-sm-size)
+              font-(--body-md-weight)
+              text-(--color-slate-medium-blue)
+              uppercase
+              mb-3">(optional)</span>
             </label>
             <Input
               type="text"
@@ -165,9 +201,17 @@ const Signup = () => {
             )}
           </div>
 
-          <div className="form-section grid grid-cols-12 gap-4">
+          <div className="mb-5 w-full grid grid-cols-12 gap-4">
             <div className="col-span-12 md:col-span-6">
-              <label>Password</label>
+              <label className={`
+                  text-(length:--label-sm-size)
+                  font-(--label-sm-weight)
+                  text-(--color-slate-medium-blue)
+                  uppercase mb-3
+                  ${errors.password ? "text-(--color-error)" : ""}
+                `}>
+                Password
+              </label>
               <Input
                 type="password"
                 placeholder="Minimum 8 characters"
@@ -178,7 +222,15 @@ const Signup = () => {
               )}
             </div>
             <div className="col-span-12 md:col-span-6">
-              <label>Confirm Password</label>
+              <label className={`
+                  text-(length:--label-sm-size)
+                  font-(--label-sm-weight)
+                  text-(--color-slate-medium-blue)
+                  uppercase mb-3
+                  ${errors.confirmPassword ? "text-(--color-error)" : ""}
+                `}>
+                Confirm Password
+              </label>
               <Input
                 type="password"
                 placeholder="Repeat your password"
@@ -192,7 +244,10 @@ const Signup = () => {
             </div>
           </div>
 
-          <div className="form-section auth-verifications flex flex-col gap-3">
+          <div className="mb-5 w-full md:flex hidden flex-col
+              p-4
+              rounded-(--radius-form)
+              bg-(--color-surface-highest)  gap-3">
             {[
               {
                 passed: passwordChecks.minLength,
@@ -222,19 +277,28 @@ const Signup = () => {
                     />
                   )}
                 </div>
-                <p className={passed ? "text-primary" : ""}>{label}</p>
+                <p className={` text-(length:--label-sm-size)
+                font-(--body-md-weight)
+                text-(--color-forms-texts)
+                m-0
+                capitalize ${passed ? "text-primary" : ""}`}>{label}</p>
               </label>
             ))}
           </div>
 
-          <Button disabled={isSubmitting} type="submit" className="w-full"> 
+          <Button disabled={isSubmitting} type="submit" className="w-full">
             {isSubmitting ? "Creating account..." : "Create account"}
           </Button>
         </form>
-        <p className="text-center auth-text">
+        <p className="text-center text-(length:--body-md-size)
+            font-(--body-md-weight)
+            text-(--color-slate-medium-blue)
+            leading-5
+            mt-4">
           Already have an account?{" "}
           <span
-            className="text-primary cursor-pointer"
+            className="text-primary cursor-pointer text-(--color-primary)
+  font-(--headline-lg-weight)"
             onClick={() => navigate("/login")}
           >
             Log in

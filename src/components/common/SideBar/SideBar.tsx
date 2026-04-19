@@ -2,11 +2,14 @@ import { useState } from "react";
 import Logo from "/favicon.svg";
 import useIsMobile from "../../../hooks/useIsMobile";
 import { logout } from "../../../services/endpoints";
-import { clearUserMetaData } from "../../../features/user/userSlice";
+import { clearUserMetaData } from "../../../store/slices/user/userSlice";
 import { useCookie } from "../../../hooks/useCookie";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../../hooks/reduxHooks";
-import { closeSidebar, openSidebar } from "../../../features/ui/sliderSlice";
+import {
+  closeSidebar,
+  openSidebar,
+} from "../../../store/slices/ui/sliderSlice";
 import {
   ProjectsIcon,
   EpicsIcon,
@@ -38,10 +41,10 @@ const navItems: NavItem[] = [
     path: "/dashboard/projects",
     responsiveIcon: ProjectsIconResponsive,
   },
-  { label: "Project Epics", icon: EpicsIcon , path: "#"},
+  { label: "Project Epics", icon: EpicsIcon, path: "#" },
   { label: "Project Tasks", icon: TasksIcon, path: "#" },
   { label: "Project Members", icon: MembersIcon, path: "#" },
-  { label: "Project Details", icon: DetailsIcon , path: "#"},
+  { label: "Project Details", icon: DetailsIcon, path: "#" },
 ];
 
 export default function Sidebar() {
