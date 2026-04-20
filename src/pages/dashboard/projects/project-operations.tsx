@@ -1,17 +1,18 @@
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import { useState } from "react";
-import { createProject } from "../../../services/endpoints";
+import { createProject, updateProject } from "../../../services/endpoints";
 import { useForm } from "react-hook-form";
 import { useWatch, type SubmitHandler } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,useParams,useLocation } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
+
 
 const projectSchema = z.object({
   name: z
     .string()
-    .min(1, "Name is required")
+    .nonempty("Name is required")
     .min(3, "Name must be at least 3 characters")
     .max(100, "Name must be at most 100 characters"),
   description: z
@@ -29,8 +30,20 @@ type ApiError = {
     };
   };
 };
+
+
+
 export default function Projects() {
   const navigate = useNavigate();
+  
+const location = useLocation();
+const { projectId } = useParams();
+
+const initialName = location.state?.title || "";
+const initialDescription = location.state?.description || "";
+
+const isEditMode = !!projectId;
+
   const {
     register,
     handleSubmit,
@@ -39,34 +52,55 @@ export default function Projects() {
     formState: { errors, isSubmitting },
   } = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
+    defaultValues: {
+      name: initialName,
+      description: initialDescription,
+    },
   });
+
   const [status, setStatus] = useState<{
     type: "success" | "error" | null;
     message: string;
   }>({ type: null, message: "" });
+
   const descriptionValue = useWatch({
     control,
     name: "description",
-    defaultValue: "",
+    defaultValue: initialDescription,
   });
+
   const handleSubmitForm: SubmitHandler<ProjectFormValues> = async (data) => {
     try {
-      const res = await createProject({
-        name: data.name,
-        description: data.description ?? "",
-      });
+      if (isEditMode) {
+        await updateProject(projectId, {
+          name: data.name,
+          description: data.description ?? "",
+        });
 
-      console.log("SUCCESS RESPONSE:", res);
+        setStatus({
+          type: "success",
+          message: "Project updated successfully",
+        });
+      } else {
+        await createProject({
+          name: data.name,
+          description: data.description ?? "",
+        });
 
-      reset();
+        reset();
 
-      setStatus({
-        type: "success",
-        message: "Project created successfully",
-      });
+        setStatus({
+          type: "success",
+          message: "Project created successfully",
+        });
+       
+      }
+      setTimeout(() => {
+        navigate("/dashboard/projects");
+      }, 1500);
+
     } catch (err: unknown) {
       const error = err as ApiError;
-
       const message =
         error?.response?.data?.message ||
         error?.message ||
@@ -74,10 +108,11 @@ export default function Projects() {
 
       setStatus({
         type: "error",
-        message: `Failed to create project: ${message}`,
+        message: `Failed to ${isEditMode ? "update" : "create"} project: ${message}`,
       });
     }
   };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
       <div className="md:flex items-center gap-2 mt-5 hidden ">
@@ -91,16 +126,16 @@ export default function Projects() {
         <span className="text-[#43465466] text-[12px] font-bold">&gt;</span>
 
         <p
-          onClick={() => navigate("/dashboard/create-project")}
           className="text-[#003D9B] text-[12px] font-bold uppercase cursor-pointer"
         >
-          Add New Project
+          {isEditMode ? "Edit Project" : "Add New Project"}
         </p>
       </div>
+
       <div className="hidden grid-cols-12 items-center md:grid">
         <div className="col-span-12 md:col-span-10 ">
           <h2 className="text-[#041B3C] text-[30px] font-semibold ">
-            Add New Project
+            {isEditMode ? "Edit Project" : "Add New Project"}
           </h2>
         </div>
         <div className="col-span-12 md:col-span-2 justify-end hidden sm:flex">
@@ -121,17 +156,18 @@ export default function Projects() {
           </Button>
         </div>
       </div>
-   <div className="
-      flex flex-col
-      md:bg-white bg-transparent
-      md:shadow-[0px_24px_48px_0px_#041b3c0f] shadow-none
-      md:rounded-(--radius-form) rounded-none
-      max-w-full md:max-w-xl
-      mx-auto
-      p-2 md:p-12
-    ">
-        <div className="flex  gap-2 items-center  ">
-          <div className="bg-[#0052CC1A] rounded-sm w-14 h-14   items-center justify-center hidden md:flex">
+
+      <div className="
+        flex flex-col
+        md:bg-white bg-transparent
+        md:shadow-[0px_24px_48px_0px_#041b3c0f] shadow-none
+        md:rounded-(--radius-form) rounded-none
+        max-w-full md:max-w-xl
+        mx-auto
+        p-2 md:p-12
+      ">
+        <div className="flex gap-2 items-center">
+          <div className="bg-[#0052CC1A] rounded-sm w-14 h-14 items-center justify-center hidden md:flex">
             <svg
               width="22"
               height="20"
@@ -146,12 +182,17 @@ export default function Projects() {
             </svg>
           </div>
           <div>
-           <h3 className="text-[30px] font-(--headline-lg-weight) text-(--color-slate-dark-blue)">Initialize New Project</h3>
+            <h3 className="text-[30px] font-(--headline-lg-weight) text-(--color-slate-dark-blue)">
+              {isEditMode ? "Edit Project" : "Initialize New Project"}
+            </h3>
             <p className="text-sm text-(--color-slate-medium-blue) mt-2">
-              Define the scope and foundational details of your project.
+              {isEditMode
+                ? "Update the details of your project."
+                : "Define the scope and foundational details of your project."}
             </p>
           </div>
         </div>
+
         {status.type && (
           <div
             className={`relative p-3 pr-10 rounded-sm text-sm border transition-all mt-5 ${
@@ -161,7 +202,6 @@ export default function Projects() {
             }`}
           >
             {status.message}
-
             <button
               type="button"
               onClick={() => setStatus({ type: null, message: "" })}
@@ -171,15 +211,21 @@ export default function Projects() {
             </button>
           </div>
         )}
-        <form className="flex flex-col items-start pt-10 pb-4 w-full" onSubmit={handleSubmit(handleSubmitForm)}>
+
+        <form
+          className="flex flex-col items-start pt-10 pb-4 w-full"
+          onSubmit={handleSubmit(handleSubmitForm)}
+        >
           <div className="mb-5 w-full">
-            <label className={`
-                  text-(length:--label-sm-size)
-                  font-(--label-sm-weight)
-                  text-(--color-slate-medium-blue)
-                  uppercase mb-3
-                  ${errors.name ? "text-(--color-error)" : ""}
-                `}>
+            <label
+              className={`
+                text-(length:--label-sm-size)
+                font-(--label-sm-weight)
+                text-(--color-slate-medium-blue)
+                uppercase mb-3
+                ${errors.name ? "text-(--color-error)" : ""}
+              `}
+            >
               PROJECT TITLE <span className="error-label"> *</span>
             </label>
 
@@ -217,12 +263,11 @@ export default function Projects() {
                 placeholder="Provide a high-level overview of the project's architectural objectives and key milestones..."
                 rows={5}
                 className={`
-               px-4 py-3 pb-8  resize-none
-             
+                  px-4 py-3 pb-8 resize-none
                   w-full rounded-sm outline-none border-none
-            pr-10 pl-4 bg-(--color-surface-highest)
-                ${errors.description ? "bg-(--color-error-field)" : ""}
-              `}
+                  pr-10 pl-4 bg-(--color-surface-highest)
+                  ${errors.description ? "bg-(--color-error-field)" : ""}
+                `}
                 {...register("description")}
               />
               <span className="absolute bottom-3 right-4 text-[var(--color-slate-medium-blue)99] text-[11px] pointer-events-none">
@@ -242,6 +287,7 @@ export default function Projects() {
                 type="button"
                 variant="text"
                 color="var(--color-slate-medium-blue)"
+                onClick={() => navigate("/dashboard/projects")}
               >
                 Cancel
               </Button>
@@ -253,12 +299,19 @@ export default function Projects() {
                 disabled={isSubmitting}
                 type="submit"
               >
-                {isSubmitting ? "Creating..." : "Create Project"}
+                {isSubmitting
+                  ? isEditMode
+                    ? "Updating..."
+                    : "Creating..."
+                  : isEditMode
+                  ? "Update Project"
+                  : "Create Project"}
               </Button>
             </div>
           </div>
         </form>
       </div>
+
       <div className="bg-(--color-surface-highest) flex justify-between gap-2 p-3 rounded-sm max-w-full md:max-w-xl mx-auto mb-3">
         <svg
           width="12"
@@ -272,7 +325,6 @@ export default function Projects() {
             fill="var(--color-slate-medium-blue)"
           />
         </svg>
-
         <span className="text-(--color-slate-medium-blue) font-normal text-[12px]">
           <span className="font-bold">Pro Tip:</span> You can invite project
           members and assign epics immediately after the initial creation

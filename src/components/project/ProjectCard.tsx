@@ -1,11 +1,15 @@
 import { formatDate } from "../utils/dateUtils";
+import { useEffect, useRef, useState } from "react";
+import { ICONS } from "../../assets";
+import { useNavigate } from "react-router-dom";
 
 type ProjectCardProps = {
   title?: string;
   description?: string;
   createdAt?: string;
+  projectId?: string;
   onClick?: () => void;
-  className?:string;
+  className?: string;
   variant?: "default" | "add";
 };
 
@@ -14,9 +18,23 @@ export default function ProjectCard({
   description,
   createdAt,
   onClick,
+  projectId,
   className,
   variant = "default",
 }: ProjectCardProps) {
+  const [openMenu, setOpenMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
   if (variant === "add") {
     return (
       <div
@@ -26,9 +44,7 @@ export default function ProjectCard({
           border-2 border-dashed border-[#C3C6D633]
         hover:shadow-md transition cursor-pointer
         flex flex-col gap-2 text-center items-center
-        justify-center align-middle ${className}`
-
-        }
+        justify-center align-middle ${className}`}
       >
         <div className="w-10 h-10 rounded-xl bg-[#F1F3FF] flex items-center justify-center mb-3 p-3">
           <svg
@@ -59,12 +75,56 @@ export default function ProjectCard({
         bg-white rounded-lg p-8 
        
         flex flex-col gap-2
-        ${className}`
-      }
+        ${className}`}
     >
-      {title && (
-        <h3 className="text-[18px] font-medium text-[#041B3C]">{title}</h3>
-      )}
+      <div className="flex justify-between items-start relative" ref={menuRef}>
+        {title && (
+          <h3 className="text-[18px] font-medium text-[#041B3C]">{title}</h3>
+        )}
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpenMenu((prev) => !prev);
+          }}
+          className="p-1"
+        >
+          <svg
+            width="3"
+            height="12"
+            viewBox="0 0 3 12"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M1.5 12C1.0875 12 0.734375 11.8531 0.440625 11.5594C0.146875 11.2656 0 10.9125 0 10.5C0 10.0875 0.146875 9.73438 0.440625 9.44063C0.734375 9.14688 1.0875 9 1.5 9C1.9125 9 2.26562 9.14688 2.55938 9.44063C2.85313 9.73438 3 10.0875 3 10.5C3 10.9125 2.85313 11.2656 2.55938 11.5594C2.26562 11.8531 1.9125 12 1.5 12ZM1.5 7.5C1.0875 7.5 0.734375 7.35312 0.440625 7.05937C0.146875 6.76562 0 6.4125 0 6C0 5.5875 0.146875 5.23438 0.440625 4.94063C0.734375 4.64688 1.0875 4.5 1.5 4.5C1.9125 4.5 2.26562 4.64688 2.55938 4.94063C2.85313 5.23438 3 5.5875 3 6C3 6.4125 2.85313 6.76562 2.55938 7.05937C2.26562 7.35312 1.9125 7.5 1.5 7.5ZM1.5 3C1.0875 3 0.734375 2.85313 0.440625 2.55938C0.146875 2.26562 0 1.9125 0 1.5C0 1.0875 0.146875 0.734375 0.440625 0.440625C0.734375 0.146875 1.0875 0 1.5 0C1.9125 0 2.26562 0.146875 2.55938 0.440625C2.85313 0.734375 3 1.0875 3 1.5C3 1.9125 2.85313 2.26562 2.55938 2.55938C2.26562 2.85313 1.9125 3 1.5 3Z"
+              fill="#C3C6D6"
+            />
+          </svg>
+        </button>
+
+        {openMenu && (
+          <div className="absolute right-0 top-6 w-40 bg-white shadow-lg border border-gray-100 rounded-md z-50">
+            <button
+              onClick={() => {
+                navigate(`/dashboard/project/${projectId}/edit`, {
+                  state: {
+                    title,
+                    description,
+                  },
+                });
+                setOpenMenu(false);
+              }}
+              className="w-full text-left
+              
+              px-4 py-2 text-sm hover:bg-gray-50"
+            >
+              <img src={ICONS.pen} alt="Edit" className="inline w-4 h-4 mr-2" />
+              Edit Project
+            </button>
+          </div>
+        )}
+      </div>
 
       {description && (
         <p className="text-[14px] text-[#434654] line-clamp-3 font-normal">
@@ -72,35 +132,31 @@ export default function ProjectCard({
         </p>
       )}
       <hr className="mt-7 mb-3 border border-[#C3C6D6]/15" />
-   {createdAt && (
-  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-2 gap-2">
-    
+      {createdAt && (
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-2 gap-2">
+          <span className="text-[11px] font-bold text-[#737685] uppercase">
+            Created at
+          </span>
 
-    <span className="text-[11px] font-bold text-[#737685] uppercase">
-      Created at
-    </span>
+          <div className="flex items-center gap-2 text-[14px] font-medium text-[#434654]">
+            <svg
+              className="sm:hidden"
+              width="11"
+              height="12"
+              viewBox="0 0 11 12"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M1.16667 11.6667C0.845833 11.6667 0.571181 11.5524 0.342708 11.324C0.114236 11.0955 0 10.8208 0 10.5V2.33333C0 2.0125 0.114236 1.73785 0.342708 1.50937C0.571181 1.2809 0.845833 1.16667 1.16667 1.16667H1.75V0H2.91667V1.16667H7.58333V0H8.75V1.16667H9.33333C9.65417 1.16667 9.92882 1.2809 10.1573 1.50937C10.3858 1.73785 10.5 2.0125 10.5 2.33333V10.5C10.5 10.8208 10.3858 11.0955 10.1573 11.324C9.92882 11.5524 9.65417 11.6667 9.33333 11.6667H1.16667ZM1.16667 10.5H9.33333V4.66667H1.16667V10.5ZM1.16667 3.5H9.33333V2.33333H1.16667V3.5ZM1.16667 3.5V2.33333V3.5Z"
+                fill="#434654"
+              />
+            </svg>
 
-    <div className="flex items-center gap-2 text-[14px] font-medium text-[#434654]">
-      
-    
-      <svg
-        className="sm:hidden"
-        width="11"
-        height="12"
-        viewBox="0 0 11 12"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M1.16667 11.6667C0.845833 11.6667 0.571181 11.5524 0.342708 11.324C0.114236 11.0955 0 10.8208 0 10.5V2.33333C0 2.0125 0.114236 1.73785 0.342708 1.50937C0.571181 1.2809 0.845833 1.16667 1.16667 1.16667H1.75V0H2.91667V1.16667H7.58333V0H8.75V1.16667H9.33333C9.65417 1.16667 9.92882 1.2809 10.1573 1.50937C10.3858 1.73785 10.5 2.0125 10.5 2.33333V10.5C10.5 10.8208 10.3858 11.0955 10.1573 11.324C9.92882 11.5524 9.65417 11.6667 9.33333 11.6667H1.16667ZM1.16667 10.5H9.33333V4.66667H1.16667V10.5ZM1.16667 3.5H9.33333V2.33333H1.16667V3.5ZM1.16667 3.5V2.33333V3.5Z"
-          fill="#434654"
-        />
-      </svg>
-
-      <span>{formatDate(createdAt)}</span>
-    </div>
-  </div>
-)}
+            <span>{formatDate(createdAt)}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

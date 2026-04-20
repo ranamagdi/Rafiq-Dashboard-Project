@@ -7,7 +7,7 @@ import ResetPassword from "./pages/auth/resetpassword/reset-password";
 import AuthCallback from "./pages/auth/authcallback";
 import Dashboard from "./pages/dashboard";
 import Projects from "./pages/dashboard/projects/index";
-import CreateProject from  "./pages/dashboard/projects/create-project";
+import ProjectOps from  "./pages/dashboard/projects/project-operations";
 
 const AppRoutes = () => {
   return (
@@ -22,7 +22,9 @@ const AppRoutes = () => {
         <Route path="/dashboard" element={<Dashboard />}>
           <Route index element={<Navigate to="projects" replace />} />
           <Route path="projects" element={<Projects />} />
-          <Route path="create-project" element={<CreateProject />} />
+          <Route path="project/add" element={<ProjectOps />} />
+          <Route path="project/:projectId/edit" element={<ProjectOps />} />
+          
         </Route>
       </Route>
     </Routes>

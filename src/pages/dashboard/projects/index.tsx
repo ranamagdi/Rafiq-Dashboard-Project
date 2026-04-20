@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import ProjectCard from "../../../components/project/ProjectCard";
 import Button from "../../../components/ui/Button";
+
 import { useNavigate } from "react-router-dom";
 import EmptyContent from "../../../components/common/Content/EmptyContent";
 import ErrorContent from "../../../components/common/Content/ErrorContent";
@@ -9,15 +10,15 @@ import { getProjects } from "../../../services/endpoints";
 import ProjectCardSkeleton from "../../../components/project/ProjectCardSkeleton";
 
 export default function Projects() {
-    type Project = {
-  id: string;
-  name: string;
-  description: string;
-  created_at: string;
-};
-const [projects, setProjects] = useState<Project[]>([]);
+  type Project = {
+    id: string;
+    name: string;
+    description: string;
+    created_at: string;
+  };
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const navigate = useNavigate();
   const hasFetched = useRef(false);
 
@@ -28,27 +29,27 @@ const [error, setError] = useState<Error | null>(null);
     const fetchProjects = async () => {
       try {
         const res = await getProjects();
-        const data: Project[] = Array.isArray(res) ? res : res?.data ?? [];
+        const data: Project[] = Array.isArray(res) ? res : (res?.data ?? []);
 
         setProjects(data);
-       } catch (err: unknown) {
-  console.error("Failed to fetch projects:", err);
+      } catch (err: unknown) {
+        console.error("Failed to fetch projects:", err);
 
-  const error = err as {
-    response?: {
-      data?: {
-        message?: string;
-      };
-    };
-    message?: string;
-  };
+        const error = err as {
+          response?: {
+            data?: {
+              message?: string;
+            };
+          };
+          message?: string;
+        };
 
-  setError(
-    new Error(
-      error?.response?.data?.message || error?.message || "Unknown error"
-    )
-  );
-} finally {
+        setError(
+          new Error(
+            error?.response?.data?.message || error?.message || "Unknown error",
+          ),
+        );
+      } finally {
         setLoading(false);
       }
     };
@@ -72,7 +73,7 @@ const [error, setError] = useState<Error | null>(null);
           <div className="col-span-12 md:col-span-2 justify-end hidden sm:flex">
             <Button
               className="flex justify-center gap-2 items-center"
-              onClick={() => navigate("/dashboard/create-project")}
+              onClick={() => navigate("/dashboard/project/add")}
             >
               <svg
                 width="11"
@@ -134,7 +135,7 @@ Create New Project"
         >
           <Button
             className="flex items-center gap-2 justify-center align-middle"
-            onClick={() => navigate("/dashboard/create-project")}
+            onClick={() => navigate("/dashboard/project/add")}
           >
             <svg
               width="20"
@@ -159,20 +160,20 @@ Create New Project"
               title={project.name}
               description={project.description}
               createdAt={project.created_at}
-            
+              projectId={project.id}
             />
           ))}
 
           <ProjectCard
             className="hidden sm:flex"
             variant="add"
-            onClick={() => console.log("add new project")}
+            onClick={() => navigate("/dashboard/project/add")}
           />
         </div>
       )}
       <div className="sm:hidden flex justify-end">
         <div
-          onClick={() => navigate("/dashboard/create-project")}
+          onClick={() => navigate("/dashboard/project/add")}
           style={{
             marginBottom: "80px",
             background:

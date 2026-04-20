@@ -2,6 +2,7 @@
 import projectEmpty from './images/Abstract _Kinetic Blueprint_ Visual Element.png'
 // icons
 import dashboard from "./icons/dashboard.svg";
+import pen from "./icons/pen.png";
 import settings from "./icons/settings.svg";
 import description from "./icons/description.svg";
 import events from "./icons/event.svg";
@@ -44,6 +45,7 @@ export const ICONS = {
   mailgrey,
   arrow,
   eye,
+  pen,
   backArrow,
   lockForgot,
   filledIconCheck,

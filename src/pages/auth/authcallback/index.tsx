@@ -49,7 +49,7 @@ const AuthCallback = () => {
     }
 
     navigate("/login", { replace: true });
-  }, []);
+  }, [getCookie, navigate, setCookie]);
 
   return null;
 };
