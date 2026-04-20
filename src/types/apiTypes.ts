@@ -23,3 +23,14 @@ export interface Task {
   due_date?: string;
   status: "TO_DO" | "IN_PROGRESS" | "DONE";
 }
+export type ApiResponse<T = unknown> = {
+  data: T;
+  headers: Record<string, string>;
+};
+
+export type ApiError = Error & {
+  response?: {
+    status: number;
+    data: unknown;
+  };
+};

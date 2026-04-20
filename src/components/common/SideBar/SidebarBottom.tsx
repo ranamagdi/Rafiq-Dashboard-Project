@@ -5,8 +5,9 @@ import {
   TasksIcon,
   MembersIcon,
   DetailsIcon,
+  ProjectsIcon,
 } from "./SideBarIcons";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation,useParams } from "react-router-dom";
 import React from "react";
 
 type Props = {
@@ -21,19 +22,47 @@ type SidebarItem = {
   path?: string;
 };
 
-const items: SidebarItem[] = [
-  { label: "Projects", icon: ProjectsIconResponsive, path: "/dashboard/projects" },
-  { label: "Epics", icon: EpicsIcon },
-  { label: "Tasks", icon: TasksIcon },
-  { label: "Members", icon: MembersIcon },
-  { label: "Details", icon: DetailsIcon },
-];
+
 
 export default function SidebarBottom({ isMobile }: Props) {
   const isOpen = useAppSelector((state) => state.slider.isSidebarOpen);
   const navigate = useNavigate();
   const location = useLocation();
+  const { projectId } = useParams();
+  const getNavItems : (projectId?: string) => SidebarItem[] = (projectId?: string) => [
+  {
+    label: "Projects",
+    icon: ProjectsIcon,
+    path: "/dashboard/projects",
+    responsiveIcon: ProjectsIconResponsive,
+  },
+  ...(projectId
+    ? [
+        {
+          label: "Project Epics",
+          icon: EpicsIcon,
+          path: `/dashboard/project/${projectId}/epics`,
+        },
+        {
+          label: "Project Tasks",
+          icon: TasksIcon,
+          path: `/dashboard/project/${projectId}/tasks`,
+        },
+        {
+          label: "Project Members",
+          icon: MembersIcon,
+          path: `/dashboard/project/${projectId}/members`,
+        },
+        {
+          label: "Project Details",
+          icon: DetailsIcon,
+          path: `/dashboard/project/${projectId}/edit`,
+        },
+      ]
+    : []),
+];
 
+const items = getNavItems(projectId);
   if (!(isMobile && !isOpen)) return null;
 
   const handleClick = (item: SidebarItem) => {
@@ -43,16 +72,16 @@ export default function SidebarBottom({ isMobile }: Props) {
   };
 
   return (
-    <div className="flex items-center justify-between gap-1 mt-auto bg-(--color-surface-low) fixed bottom-0 left-0 right-0 px-2 py-1">
+    <div className="flex items-center justify-center align-middle gap-1 mt-auto bg-(--color-surface-low) fixed bottom-0 left-0 right-0 px-2 py-1">
       {items.map((item) => {
         const Icon = item.icon;
-        const isActive = location.pathname === item.path;
+        const isActive = location.pathname.includes(item.path?.split("/:")[0] || ""); 
 
         return (
           <div
             key={item.label}
             onClick={() => handleClick(item)}
-            className="flex flex-col items-center justify-center px-3 py-2 cursor-pointer"
+            className="flex flex-col items-center text-center justify-center px-3 py-2 cursor-pointer"
           >
             <Icon isActive={isActive} />
             <span

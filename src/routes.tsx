@@ -8,7 +8,7 @@ import AuthCallback from "./pages/auth/authcallback";
 import Dashboard from "./pages/dashboard";
 import Projects from "./pages/dashboard/projects/index";
 import ProjectOps from  "./pages/dashboard/projects/project-operations";
-
+import Epics from "./pages/dashboard/epics";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -24,6 +24,7 @@ const AppRoutes = () => {
           <Route path="projects" element={<Projects />} />
           <Route path="project/add" element={<ProjectOps />} />
           <Route path="project/:projectId/edit" element={<ProjectOps />} />
+          <Route path="project/:projectId/epics" element={<Epics />} />
           
         </Route>
       </Route>

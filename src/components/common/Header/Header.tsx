@@ -43,8 +43,8 @@ const showLogo =
         {accessToken && user && (
           <div className="flex items-center gap-3">
             <div className="text-center">
-              <p>{user.name}</p>
-              <p className="uppercase text-xs text-(--color-primary)">
+              <p className="font-medium">{user.name}</p>
+              <p className="uppercase font-medium text-xs text-(--color-primary)">
                 {user.department}
               </p>
             </div>

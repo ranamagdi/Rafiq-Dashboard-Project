@@ -1,12 +1,11 @@
 import "./App.css";
 import AppRoutes from "./routes";
 import Header from "./components/common/Header/Header";
-
-
 import { useEffect, useRef } from "react";
 import { getUser } from "./services/endpoints";
 import { useAppDispatch } from "./hooks/reduxHooks";
 import { setUserMetaData } from "./store/slices/user/userSlice";
+import type { UserMetaData } from "./store/slices/user/userSlice";
 import { useCookie } from "./hooks/useCookie";
 
 function App() {
@@ -25,7 +24,7 @@ function App() {
     const fetchUser = async () => {
       try {
         const res = await getUser();
-        const user = res?.data || res;
+        const user = (res?.data || res) as { user_metadata?: UserMetaData };
 
         if (user?.user_metadata) {
           dispatch(setUserMetaData(user.user_metadata));
@@ -40,7 +39,6 @@ function App() {
 
   return (
     <div className="App">
-  
       <Header />
       <AppRoutes />
     </div>

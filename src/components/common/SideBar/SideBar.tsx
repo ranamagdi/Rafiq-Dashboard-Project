@@ -4,8 +4,9 @@ import useIsMobile from "../../../hooks/useIsMobile";
 import { logout } from "../../../services/endpoints";
 import { clearUserMetaData } from "../../../store/slices/user/userSlice";
 import { useCookie } from "../../../hooks/useCookie";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate,useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../../hooks/reduxHooks";
+
 import {
   closeSidebar,
   openSidebar,
@@ -34,18 +35,7 @@ type NavItem = {
   responsiveIcon?: React.ComponentType<IconProps>;
 };
 
-const navItems: NavItem[] = [
-  {
-    label: "Projects",
-    icon: ProjectsIcon,
-    path: "/dashboard/projects",
-    responsiveIcon: ProjectsIconResponsive,
-  },
-  { label: "Project Epics", icon: EpicsIcon, path: "#" },
-  { label: "Project Tasks", icon: TasksIcon, path: "#" },
-  { label: "Project Members", icon: MembersIcon, path: "#" },
-  { label: "Project Details", icon: DetailsIcon, path: "#" },
-];
+
 
 export default function Sidebar() {
   const { deleteCookie } = useCookie();
@@ -56,6 +46,40 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const isOpen = useAppSelector((state) => state.slider.isSidebarOpen);
   const isMobile = useIsMobile();
+  const { projectId } = useParams();
+const getNavItems: (projectId?: string) => NavItem[] = (projectId?: string) => [
+  {
+    label: "Projects",
+    icon: ProjectsIcon,
+    path: "/dashboard/projects",
+    responsiveIcon: ProjectsIconResponsive,
+  },
+  ...(projectId
+    ? [
+        {
+          label: "Project Epics",
+          icon: EpicsIcon,
+          path: `/dashboard/project/${projectId}/epics`,
+        },
+        {
+          label: "Project Tasks",
+          icon: TasksIcon,
+          path: `/dashboard/project/${projectId}/tasks`,
+        },
+        {
+          label: "Project Members",
+          icon: MembersIcon,
+          path: `/dashboard/project/${projectId}/members`,
+        },
+        {
+          label: "Project Details",
+          icon: DetailsIcon,
+          path: `/dashboard/project/${projectId}/edit`,
+        },
+      ]
+    : []),
+];
+const navItems = getNavItems(projectId);
 
   const handleLogout = async () => {
     try {
@@ -106,7 +130,7 @@ export default function Sidebar() {
 
         <nav className="flex flex-col gap-0.5">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
+          const isActive = location.pathname.includes(item.path.split("/:")[0]);
 
             const IconComponent =
               isMobile && item.responsiveIcon ? item.responsiveIcon : item.icon;

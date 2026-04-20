@@ -52,8 +52,13 @@ export const createProject = (data: { name: string; description: string }) => {
   return api.post("/rest/v1/projects", data);
 };
 
-export const getProjects = () => {
-  return api.get("/rest/v1/rpc/get_projects");
+export const getProjects = (limit: number, offset: number) => {
+  return api.get(`/rest/v1/rpc/get_projects?limit=${limit}&offset=${offset}`, {
+    headers:{ Prefer: "count=exact" },
+  });
+};
+export const getProject = (id: string) => {
+  return api.get(`/rest/v1/rpc/get_projects?id=eq.${id}`);
 };
 
 export const updateProject = (id: string, data: Partial<Project>) => {

@@ -73,7 +73,7 @@ export default function ProjectCard({
       onClick={onClick}
       className={`
         bg-white rounded-lg p-8 
-       
+        hover:shadow-md transition cursor-pointer
         flex flex-col gap-2
         ${className}`}
     >
@@ -107,12 +107,7 @@ export default function ProjectCard({
           <div className="absolute right-0 top-6 w-40 bg-white shadow-lg border border-gray-100 rounded-md z-50">
             <button
               onClick={() => {
-                navigate(`/dashboard/project/${projectId}/edit`, {
-                  state: {
-                    title,
-                    description,
-                  },
-                });
+                navigate(`/dashboard/project/${projectId}/edit`);
                 setOpenMenu(false);
               }}
               className="w-full text-left

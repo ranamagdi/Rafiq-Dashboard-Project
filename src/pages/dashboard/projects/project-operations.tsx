@@ -1,13 +1,16 @@
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
-import { useState } from "react";
-import { createProject, updateProject } from "../../../services/endpoints";
+import { useState, useEffect, useRef } from "react";
+import {
+  createProject,
+  updateProject,
+  getProject,
+} from "../../../services/endpoints";
 import { useForm } from "react-hook-form";
 import { useWatch, type SubmitHandler } from "react-hook-form";
-import { useNavigate,useParams,useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
-
 
 const projectSchema = z.object({
   name: z
@@ -31,18 +34,14 @@ type ApiError = {
   };
 };
 
-
-
 export default function Projects() {
   const navigate = useNavigate();
-  
-const location = useLocation();
-const { projectId } = useParams();
+  const { projectId } = useParams();
+  const [initialName, setInitialName] = useState("");
+  const [initialDescription, setInitialDescription] = useState("");
 
-const initialName = location.state?.title || "";
-const initialDescription = location.state?.description || "";
-
-const isEditMode = !!projectId;
+  const hasFetched = useRef(false);
+  const isEditMode = !!projectId;
 
   const {
     register,
@@ -68,6 +67,38 @@ const isEditMode = !!projectId;
     name: "description",
     defaultValue: initialDescription,
   });
+  useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+    if (!projectId) return;
+
+    const fetchProject = async () => {
+      try {
+        const res = await getProject(projectId);
+        const data = Array.isArray(res) ? res[0] : res?.data;
+
+        if (!data) {
+          setStatus({ type: "error", message: "Project not found" });
+          return;
+        }
+
+        const name = data.name || "";
+        const description = data.description || "";
+
+        setInitialName(name);
+        setInitialDescription(description);
+        reset({ name, description });
+      } catch (err: unknown) {
+        const error = err as ApiError;
+        setStatus({
+          type: "error",
+          message: `Failed to fetch project: ${error?.response?.data?.message || error?.message || "Unknown error"}`,
+        });
+      }
+    };
+
+    fetchProject();
+  }, [projectId, reset]);
 
   const handleSubmitForm: SubmitHandler<ProjectFormValues> = async (data) => {
     try {
@@ -93,12 +124,10 @@ const isEditMode = !!projectId;
           type: "success",
           message: "Project created successfully",
         });
-       
       }
       setTimeout(() => {
         navigate("/dashboard/projects");
       }, 1500);
-
     } catch (err: unknown) {
       const error = err as ApiError;
       const message =
@@ -125,9 +154,7 @@ const isEditMode = !!projectId;
 
         <span className="text-[#43465466] text-[12px] font-bold">&gt;</span>
 
-        <p
-          className="text-[#003D9B] text-[12px] font-bold uppercase cursor-pointer"
-        >
+        <p className="text-[#003D9B] text-[12px] font-bold uppercase cursor-pointer">
           {isEditMode ? "Edit Project" : "Add New Project"}
         </p>
       </div>
@@ -157,7 +184,8 @@ const isEditMode = !!projectId;
         </div>
       </div>
 
-      <div className="
+      <div
+        className="
         flex flex-col
         md:bg-white bg-transparent
         md:shadow-[0px_24px_48px_0px_#041b3c0f] shadow-none
@@ -165,7 +193,8 @@ const isEditMode = !!projectId;
         max-w-full md:max-w-xl
         mx-auto
         p-2 md:p-12
-      ">
+      "
+      >
         <div className="flex gap-2 items-center">
           <div className="bg-[#0052CC1A] rounded-sm w-14 h-14 items-center justify-center hidden md:flex">
             <svg
@@ -304,8 +333,8 @@ const isEditMode = !!projectId;
                     ? "Updating..."
                     : "Creating..."
                   : isEditMode
-                  ? "Update Project"
-                  : "Create Project"}
+                    ? "Update Project"
+                    : "Create Project"}
               </Button>
             </div>
           </div>

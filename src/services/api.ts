@@ -1,3 +1,4 @@
+import type {ApiResponse,ApiError}  from "../types/apiTypes";
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 const getCookie = (name: string) => {
@@ -17,12 +18,6 @@ const safeJson = async (res: Response) => {
 };
 
 
-type ApiError = Error & {
-  response?: {
-    status: number;
-    data: unknown;
-  };
-};
 
 
 const refreshAccessToken = async () => {
@@ -39,7 +34,7 @@ const refreshAccessToken = async () => {
         apikey: import.meta.env.VITE_API_KEY,
       },
       body: JSON.stringify({ refresh_token: refreshToken }),
-      credentials: "include",
+      credentials: "omit",
     }
   );
 
@@ -52,7 +47,7 @@ const refreshAccessToken = async () => {
   return data.access_token;
 };
 
-const request = async (endpoint: string, options: RequestInit = {}) => {
+const request = async (endpoint: string, options: RequestInit = {}): Promise<ApiResponse> => {
   const token = getCookie("access_token");
 
   const makeRequest = async (accessToken?: string) => {
@@ -109,7 +104,7 @@ const request = async (endpoint: string, options: RequestInit = {}) => {
 
 
 export const api = {
-  get: (url: string) => request(url),
+ get: (url: string, options?: RequestInit) => request(url, { ...options, method: "GET" }),
 
   post: (url: string, data?: unknown) =>
     request(url, {

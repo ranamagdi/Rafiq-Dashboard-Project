@@ -1,13 +1,14 @@
 import { createSlice } from "@reduxjs/toolkit";
-import type {PayloadAction} from "@reduxjs/toolkit";
+import type { PayloadAction } from "@reduxjs/toolkit";
 
-interface UserMetaData {
-  sub: string;
-  name: string;
-  email: string;
-  department: string;
-  email_verified: boolean;
-  phone_verified: boolean;
+
+export interface UserMetaData {
+  sub?: string;
+  name?: string;
+  email?: string;
+  department?: string;
+  email_verified?: boolean;
+  phone_verified?: boolean;
 }
 
 interface UserState {
@@ -31,5 +32,6 @@ const userSlice = createSlice({
     },
   },
 });
+
 export const { setUserMetaData, clearUserMetaData } = userSlice.actions;
 export default userSlice.reducer;
