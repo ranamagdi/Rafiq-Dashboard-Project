@@ -32,7 +32,7 @@ const Button = ({
       className={cn(
         base,
         variants[variant],
-        disabled && "opacity-60 cursor-not-allowed",
+        disabled && "opacity-60 cursor-not-allowed **:cursor-not-allowed",
         className
       )}
       style={

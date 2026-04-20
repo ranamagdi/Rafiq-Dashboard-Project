@@ -42,10 +42,10 @@ const Login = () => {
     try {
       setErrorMessage(null);
       const response = await login(data.email, data.password);
-      const { access_token, refresh_token, user } = response;
+      const { access_token, refresh_token, user_metadata } = response.data;
       setCookie("access_token", access_token);
       setCookie("refresh_token", refresh_token);
-      dispatch(setUserMetaData(user.user_metadata));
+      dispatch(setUserMetaData(user_metadata));
       navigate("/dashboard");
     } catch (error) {
       if (error instanceof Error) {

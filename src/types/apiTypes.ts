@@ -1,3 +1,4 @@
+import type {UserMetaData} from "../store/slices/user/userSlice";
 export interface Project {
   id?: string;
   name: string;
@@ -25,12 +26,17 @@ export interface Task {
 }
 export type ApiResponse<T = unknown> = {
   data: T;
-  headers: Record<string, string>;
+  headers: Headers;
 };
-
 export type ApiError = Error & {
   response?: {
     status: number;
     data: unknown;
   };
 };
+
+export interface LoginResponse {
+  access_token: string;
+  refresh_token: string;
+  user_metadata: UserMetaData;
+}

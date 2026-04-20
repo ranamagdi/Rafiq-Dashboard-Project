@@ -23,33 +23,39 @@ export default function Projects() {
   const [error, setError] = useState<Error | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const hasFetched = useRef(false);
+
   const navigate = useNavigate();
   const observer = useRef<IntersectionObserver | null>(null);
   const isMobile = useIsMobile();
-  const PAGE_SIZE = 10;
+  const limit = 10;
   const [totalProjects, setTotalProjects] = useState(0);
-  // --- 1. Fetch Logic ---
+
   const fetchProjects = useCallback(
     async (pageNum: number, shouldAppend: boolean) => {
       setLoading(true);
       setError(null);
 
       try {
-        const offset = (pageNum - 1) * PAGE_SIZE;
-        const res = await getProjects(PAGE_SIZE, offset);
+        const offset = (pageNum - 1) * limit;
+        const res = await getProjects(limit, offset);
+        const contentRange = res.headers.get("content-range");
+
+        const total = contentRange
+          ? parseInt(contentRange.split("/")[1], 10)
+          : 0;
+
         const data: Project[] = Array.isArray(res)
           ? res
           : ((res as ApiResponse<Project[]>)?.data ?? []);
 
-        setHasMore(data.length === PAGE_SIZE);
+        setHasMore(data.length === limit);
 
         if (shouldAppend) {
           setProjects((prev) => [...prev, ...data]);
           setTotalProjects((prev) => prev + data.length);
         } else {
           setProjects(data);
-          setTotalProjects(data.length);
+          setTotalProjects(total);
         }
       } catch (err: unknown) {
         setError(
@@ -62,19 +68,14 @@ export default function Projects() {
     [],
   );
 
-  // Initial load and page changes (for desktop pagination)
   useEffect(() => {
-    if (hasFetched.current) return;
-    hasFetched.current = true;
-    if (!isMobile) {
-      fetchProjects(page, false);
-    }
-  }, [page, fetchProjects, isMobile]);
+    if (isMobile) return;
 
-  // Initial load for mobile
+    fetchProjects(page, false);
+  }, [page, isMobile, fetchProjects]);
+
   useEffect(() => {
-    if (hasFetched.current) return;
-    hasFetched.current = true;
+  
     if (isMobile) {
       setProjects([]);
       setTotalProjects(0);
@@ -84,7 +85,6 @@ export default function Projects() {
     }
   }, [isMobile, fetchProjects]);
 
-  // --- 2. Infinite Scroll Observer (Mobile Only) ---
   const lastProjectElementRef = useCallback(
     (node: HTMLDivElement) => {
       if (!isMobile || loading) return;
@@ -103,7 +103,6 @@ export default function Projects() {
     [isMobile, loading, hasMore, page, fetchProjects],
   );
 
-  // --- 3. Pagination Handlers (Desktop) ---
   const handlePreviousPage = () => {
     if (page > 1) {
       setPage((p) => p - 1);
@@ -117,10 +116,17 @@ export default function Projects() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
+  const getVisiblePages = () => {
+    const pages = [];
 
+    if (page > 1) pages.push(page - 1);
+    pages.push(page);
+    if (hasMore) pages.push(page + 1);
+
+    return pages;
+  };
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-9">
-      {/* Header Section */}
       {!error && (projects.length !== 0 || loading) && (
         <div className="grid grid-cols-12 items-center mt-4">
           <div className="col-span-12 md:col-span-10">
@@ -139,7 +145,6 @@ export default function Projects() {
         </div>
       )}
 
-      {/* Projects Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {projects.map((project, index) => {
           const isLastElement = isMobile && projects.length === index + 1;
@@ -160,21 +165,48 @@ export default function Projects() {
             </div>
           );
         })}
-
+        <ProjectCard
+          className="hidden sm:flex"
+          variant="add"
+          onClick={() => navigate("/dashboard/project/add")}
+        />
+         <div className="sm:hidden flex justify-end">
+        <div
+          onClick={() => navigate("/dashboard/project/add")}
+          style={{
+            marginBottom: "80px",
+            background:
+              "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%)",
+          }}
+          className="w-14 h-14 text-white rounded-2xl shadow-lg flex items-center justify-center cursor-pointer hover:scale-105 transition"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M12 5v14M5 12h14"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        </div>
+      </div>
         {loading &&
           Array.from({ length: isMobile ? 3 : 6 }).map((_, i) => (
             <ProjectCardSkeleton key={`skeleton-${i}`} />
           ))}
       </div>
 
-      {/* Desktop Pagination Controls */}
       {!isMobile && !loading && projects.length > 0 && (
         <div className="flex justify-between items-center">
           <p className="text-(--color-forms-texts) text-[12px] font-medium">
             Showing {projects.length} of {totalProjects} active projects
           </p>
           <div className="flex justify-center items-center gap-4 py-8">
-            <Button disabled={page === 1} onClick={handlePreviousPage} className="bg-transparent border border-solid border-[#C3C6D6] border-opacity-30 px-3 h-8">
+            <Button
+              disabled={page === 1}
+              onClick={handlePreviousPage}
+              className="bg-transparent border border-solid border-[#C3C6D6] border-opacity-30 px-3 h-8"
+            >
               <svg
                 width="5"
                 height="7"
@@ -188,18 +220,31 @@ export default function Projects() {
                 />
               </svg>
             </Button>
-
             <div className="flex items-center gap-2">
-              <span className="text-white shadow-[0px_1px_2px_0px_#0000000D]  bg-(--color-primary-container) h-8 w-8 rounded-sm text-sm font-semibold transition flex items-center justify-center">
-                {page}
-              </span>
-         
-              <span className="text-gray-700 font-medium text-sm">
-                {hasMore ? "..." : page}
-              </span>
+              {getVisiblePages().map((p, i) => (
+                <span
+                  key={i}
+                  className={`h-8 w-8 rounded-sm text-sm font-semibold flex items-center justify-center
+                    ${
+                      p === page
+                        ? "text-white bg-(--color-primary-container)"
+                        : "text-gray-700"
+                    }`}
+                >
+                  {p}
+                </span>
+              ))}
+
+              {hasMore && (
+                <span className="text-gray-700 font-medium text-sm">...</span>
+              )}
             </div>
 
-            <Button disabled={!hasMore} onClick={handleNextPage} className="bg-transparent border border-solid border-[#C3C6D6] border-opacity-30 px-3 h-8">
+            <Button
+              disabled={!hasMore}
+              onClick={handleNextPage}
+              className="bg-transparent border border-solid border-[#C3C6D6] border-opacity-30 px-3 h-8"
+            >
               <svg
                 width="5"
                 height="7"
@@ -217,21 +262,15 @@ export default function Projects() {
         </div>
       )}
 
-      {/* Mobile Loading Indicator */}
-      {isMobile && loading && projects.length > 0 && (
-        <div className="flex justify-center py-4">
-          <div className="text-sm text-gray-500">Loading more projects...</div>
-        </div>
-      )}
+      <div className="flex justify-center py-4">
+        {isMobile &&
+          loading &&
+          projects.length > 0 &&
+          Array.from({ length: isMobile ? 3 : 6 }).map((_, i) => (
+            <ProjectCardSkeleton key={`skeleton-${i}`} />
+          ))}
+      </div>
 
-      {/* Mobile End Message */}
-      {isMobile && !hasMore && projects.length > PAGE_SIZE && !loading && (
-        <div className="flex justify-center py-8">
-          <div className="text-sm text-gray-400">You've reached the end 🎉</div>
-        </div>
-      )}
-
-      {/* Error & Empty States */}
       {error && (
         <ErrorContent title="Error" description={error.message}>
           <Button onClick={() => window.location.reload()}>Retry</Button>

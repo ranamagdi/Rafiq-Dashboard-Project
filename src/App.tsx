@@ -2,10 +2,8 @@ import "./App.css";
 import AppRoutes from "./routes";
 import Header from "./components/common/Header/Header";
 import { useEffect, useRef } from "react";
-import { getUser } from "./services/endpoints";
 import { useAppDispatch } from "./hooks/reduxHooks";
-import { setUserMetaData } from "./store/slices/user/userSlice";
-import type { UserMetaData } from "./store/slices/user/userSlice";
+import { fetchUser } from "./store/slices/user/userSlice";
 import { useCookie } from "./hooks/useCookie";
 
 function App() {
@@ -21,21 +19,9 @@ function App() {
 
     if (!token) return;
 
-    const fetchUser = async () => {
-      try {
-        const res = await getUser();
-        const user = (res?.data || res) as { user_metadata?: UserMetaData };
-
-        if (user?.user_metadata) {
-          dispatch(setUserMetaData(user.user_metadata));
-        }
-      } catch (err) {
-        console.error("Failed to fetch user:", err);
-      }
-    };
-
-    fetchUser();
+    dispatch(fetchUser());
   }, [dispatch, token]);
+
 
   return (
     <div className="App">

@@ -87,14 +87,13 @@ const Signup = () => {
           department: data.department || "",
         },
       });
-      const { access_token, refresh_token, user } = response.data;
+      const { access_token, refresh_token, user_metadata } = response.data;
 
       setCookie("access_token", access_token);
       setCookie("refresh_token", refresh_token);
 
-      dispatch(setUserMetaData(user.user_metadata));
+      dispatch(setUserMetaData(user_metadata));
 
-      console.log("User Meta Data:", user.user_metadata);
 
       navigate("/dashboard");
       console.log("Sign up successful:", response.data);

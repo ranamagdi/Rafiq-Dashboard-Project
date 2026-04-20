@@ -106,7 +106,8 @@ export default function ProjectCard({
         {openMenu && (
           <div className="absolute right-0 top-6 w-40 bg-white shadow-lg border border-gray-100 rounded-md z-50">
             <button
-              onClick={() => {
+              onClick={(e) => {
+                 e.stopPropagation();
                 navigate(`/dashboard/project/${projectId}/edit`);
                 setOpenMenu(false);
               }}

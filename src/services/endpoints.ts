@@ -1,5 +1,5 @@
 import { api } from "./api";
-import type { Project, Epic, Task } from "../types/apiTypes";
+import type { Project, Epic, Task, LoginResponse } from "../types/apiTypes";
 
 // SIGN UP
 export const signUp = (data: {
@@ -10,16 +10,15 @@ export const signUp = (data: {
     department: string;
   };
 }) => {
-  return api.post("/auth/v1/signup", data);
+  return api.post<LoginResponse>("/auth/v1/signup", data);
 };
 
 // LOGIN
-export const login = (email: string, password: string) => {
-  return api.post("/auth/v1/token?grant_type=password", {
+export const login = (email: string, password: string) =>
+  api.post<LoginResponse>("/auth/v1/token?grant_type=password", {
     email,
     password,
   });
-};
 
 // FORGOT PASSWORD
 export const forgotPassword = (email: string) => {

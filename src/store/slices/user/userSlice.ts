@@ -1,6 +1,6 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-
+import { getUser } from "../../../services/endpoints";
 
 export interface UserMetaData {
   sub?: string;
@@ -19,9 +19,18 @@ const initialState: UserState = {
   userMetaData: null,
 };
 
+export const fetchUser = createAsyncThunk<UserMetaData, void>(
+  "user/fetchUser",
+  async () => {
+    const response = await getUser();
+    return response.data as UserMetaData;
+  }
+);
+
 const userSlice = createSlice({
   name: "user",
   initialState,
+
   reducers: {
     setUserMetaData: (state, action: PayloadAction<UserMetaData>) => {
       state.userMetaData = action.payload;
@@ -30,6 +39,13 @@ const userSlice = createSlice({
     clearUserMetaData: (state) => {
       state.userMetaData = null;
     },
+  },
+
+
+  extraReducers: (builder) => {
+    builder.addCase(fetchUser.fulfilled, (state, action) => {
+      state.userMetaData = action.payload;
+    });
   },
 });
 

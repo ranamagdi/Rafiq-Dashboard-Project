@@ -46,8 +46,10 @@ const refreshAccessToken = async () => {
 
   return data.access_token;
 };
-
-const request = async (endpoint: string, options: RequestInit = {}): Promise<ApiResponse> => {
+const request = async <T = unknown>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<ApiResponse<T>> => {
   const token = getCookie("access_token");
 
   const makeRequest = async (accessToken?: string) => {
@@ -86,10 +88,10 @@ const request = async (endpoint: string, options: RequestInit = {}): Promise<Api
 
   const data = await safeJson(res);
 
-  if (!res.ok) {
-    const err: ApiError = new Error(
+ if (!res.ok) {
+    const err = new Error(
       data?.msg || data?.message || "API error"
-    );
+    ) as ApiError;  // cast to ApiError
 
     err.response = {
       status: res.status,
@@ -99,33 +101,25 @@ const request = async (endpoint: string, options: RequestInit = {}): Promise<Api
     throw err;
   }
 
-  return data;
+  return {
+    data,
+    headers: res.headers,
+  };
 };
-
 
 export const api = {
- get: (url: string, options?: RequestInit) => request(url, { ...options, method: "GET" }),
+  get: <T = unknown>(url: string, options?: RequestInit) =>
+    request<T>(url, { ...options, method: "GET" }),
 
-  post: (url: string, data?: unknown) =>
-    request(url, {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+  post: <T = unknown>(url: string, data?: unknown) =>
+    request<T>(url, { method: "POST", body: JSON.stringify(data) }),
 
-  put: (url: string, data?: unknown) =>
-    request(url, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    }),
+  put: <T = unknown>(url: string, data?: unknown) =>
+    request<T>(url, { method: "PUT", body: JSON.stringify(data) }),
 
-  patch: (url: string, data?: unknown) =>
-    request(url, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    }),
+  patch: <T = unknown>(url: string, data?: unknown) =>
+    request<T>(url, { method: "PATCH", body: JSON.stringify(data) }),
 
-  delete: (url: string) =>
-    request(url, {
-      method: "DELETE",
-    }),
-};
+  delete: <T = unknown>(url: string) =>
+    request<T>(url, { method: "DELETE" }),
+}
