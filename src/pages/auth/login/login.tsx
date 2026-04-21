@@ -7,10 +7,11 @@ import type { SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import { login } from "../../../services/endpoints";
+import { fetchUser } from "../../../store/slices/user/userSlice";
 import { useState } from "react";
 import { useCookie } from "../../../hooks/useCookie";
 import { useAppDispatch } from "../../../hooks/reduxHooks";
-import { setUserMetaData } from "../../../store/slices/user/userSlice";
+
 
 const Login = () => {
   const { setCookie } = useCookie();
@@ -42,10 +43,11 @@ const Login = () => {
     try {
       setErrorMessage(null);
       const response = await login(data.email, data.password);
-      const { access_token, refresh_token, user_metadata } = response.data;
+      const { access_token, refresh_token } = response.data;
       setCookie("access_token", access_token);
       setCookie("refresh_token", refresh_token);
-      dispatch(setUserMetaData(user_metadata));
+      
+    dispatch(fetchUser());
       navigate("/dashboard");
     } catch (error) {
       if (error instanceof Error) {

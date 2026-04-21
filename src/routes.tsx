@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import PublicRoute from "./components/auth/PublicRoute";
 import Signup from "./pages/auth/signup/sign-up";
 import Login from "./pages/auth/login/login";
 import ForgotPassword from "./pages/auth/forgotpassword/forgot-password";
@@ -12,10 +13,12 @@ import Epics from "./pages/dashboard/epics";
 const AppRoutes = () => {
   return (
     <Routes>
+      <Route element={<PublicRoute />}>
        <Route path="/sign-up" element={<Signup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/login" element={<Login />} />
+      </Route>
       <Route path="/" element={<AuthCallback />} />
 
       <Route element={<ProtectedRoute />}>

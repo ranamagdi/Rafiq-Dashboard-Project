@@ -40,3 +40,14 @@ export interface LoginResponse {
   refresh_token: string;
   user_metadata: UserMetaData;
 }
+
+export type ApiUser = {
+  id: string;
+  email: string;
+  user_metadata?: {
+    name?: string;
+    department?: string;
+    email_verified?: boolean;
+    phone_verified?: boolean;
+  };
+};

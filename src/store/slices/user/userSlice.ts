@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { getUser } from "../../../services/endpoints";
+import type { ApiUser } from "../../../types/apiTypes";
 
 export interface UserMetaData {
   sub?: string;
@@ -23,10 +24,18 @@ export const fetchUser = createAsyncThunk<UserMetaData, void>(
   "user/fetchUser",
   async () => {
     const response = await getUser();
-    return response.data as UserMetaData;
+    const user: ApiUser = response.data;
+
+    return {
+      sub: user.id,
+      email: user.email,
+      name: user.user_metadata?.name,
+      department: user.user_metadata?.department,
+      email_verified: user.user_metadata?.email_verified,
+      phone_verified: user.user_metadata?.phone_verified,
+    };
   }
 );
-
 const userSlice = createSlice({
   name: "user",
   initialState,
@@ -40,7 +49,6 @@ const userSlice = createSlice({
       state.userMetaData = null;
     },
   },
-
 
   extraReducers: (builder) => {
     builder.addCase(fetchUser.fulfilled, (state, action) => {

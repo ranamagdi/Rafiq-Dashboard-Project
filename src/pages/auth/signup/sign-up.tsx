@@ -11,7 +11,7 @@ import { signUp } from "../../../services/endpoints";
 import { useState } from "react";
 import { useCookie } from "../../../hooks/useCookie";
 import { useAppDispatch } from "../../../hooks/reduxHooks";
-import { setUserMetaData } from "../../../store/slices/user/userSlice";
+import { fetchUser } from "../../../store/slices/user/userSlice";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -87,12 +87,12 @@ const Signup = () => {
           department: data.department || "",
         },
       });
-      const { access_token, refresh_token, user_metadata } = response.data;
+      const { access_token, refresh_token } = response.data;
 
       setCookie("access_token", access_token);
       setCookie("refresh_token", refresh_token);
 
-      dispatch(setUserMetaData(user_metadata));
+       dispatch(fetchUser());
 
 
       navigate("/dashboard");

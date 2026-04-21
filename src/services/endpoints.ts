@@ -1,5 +1,5 @@
 import { api } from "./api";
-import type { Project, Epic, Task, LoginResponse } from "../types/apiTypes";
+import type { Project, Epic, Task, LoginResponse, ApiUser } from "../types/apiTypes";
 
 // SIGN UP
 export const signUp = (data: {
@@ -37,7 +37,7 @@ export const logout = () => {
 
 // GET USER
 export const getUser = () => {
-  return api.get("/auth/v1/user");
+  return api.get<ApiUser>("/auth/v1/user");
 };
 
 // REFRESH TOKEN

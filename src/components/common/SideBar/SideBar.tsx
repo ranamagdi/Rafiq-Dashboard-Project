@@ -113,7 +113,7 @@ const navItems = getNavItems(projectId);
           ${
             isMobile
               ? `w-64 px-3 fixed top-0 left-0 z-50 ${isOpen ? "translate-x-0 " : " -translate-x-full"}`
-              : `${collapsed ? "w-14 px-2 " : "w-52 px-3  fixed top-0 left-0 z-50"}`
+              : `${collapsed ? "w-14 px-2 sticky top-0 h-screen " : "w-52 px-3  fixed top-0 left-0 z-50"}`
           }
         `}
       >
