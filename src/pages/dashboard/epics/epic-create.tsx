@@ -1,48 +1,52 @@
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
-import { useState } from "react";
-import { createEpic } from "../../../services/endpoints";
+import { useState, useEffect } from "react";
+import { createEpic, getProjectMembers } from "../../../services/endpoints";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
+import type { ApiError,Member } from "../../../types/apiTypes";
 
 const epicSchema = z.object({
   title: z
     .string()
     .nonempty("Title is required")
-    .min(3, "Title must be at least 3 characters")
-    .max(100, "Title must be at most 100 characters"),
+    .min(3, "Title must be at least 3 characters"),
   description: z
     .string()
     .max(500, "Description must be at most 500 characters")
     .optional(),
   assignee: z.string().optional(),
-  deadline: z.string().optional(),
+  deadline: z
+    .string()
+    .optional()
+    .refine((value) => {
+      if (!value) return true;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const selected = new Date(value);
+      return selected >= today;
+    }, "Deadline must be today or a future date"),
 });
 
 type EpicFormValues = z.infer<typeof epicSchema>;
 
-type ApiError = {
-  message?: string;
-  response?: {
-    data?: {
-      message?: string;
-    };
-  };
-};
-
 export default function CreateEpic() {
   const navigate = useNavigate();
   const { projectId } = useParams();
-
+  const [members, setMembers] = useState<Member[]>([]);
   const {
     register,
     handleSubmit,
     reset,
     control,
     formState: { errors, isSubmitting },
+    
   } = useForm<EpicFormValues>({
+     mode: "onChange",
     resolver: zodResolver(epicSchema),
   });
 
@@ -56,7 +60,22 @@ export default function CreateEpic() {
     name: "description",
     defaultValue: "",
   });
+  useEffect(() => {
+    if (!projectId) return;
 
+    const fetchMembers = async () => {
+      try {
+        const res = await getProjectMembers(projectId);
+       const data: Member[] = res.data as Member[];
+
+        setMembers(data || []);
+      } catch (err) {
+        console.error("Failed to fetch members", err);
+      }
+    };
+
+    fetchMembers();
+  }, [projectId]);
   const handleSubmitForm: SubmitHandler<EpicFormValues> = async (data) => {
     try {
       await createEpic({
@@ -73,6 +92,9 @@ export default function CreateEpic() {
         type: "success",
         message: "Epic created successfully",
       });
+      setTimeout(() => {
+        navigate(`/dashboard/project/${projectId}/epics`);
+      }, 1500);
     } catch (err: unknown) {
       const error = err as ApiError;
       const message =
@@ -89,7 +111,31 @@ export default function CreateEpic() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      {/* Page Header */}
+         <div className="md:flex items-center gap-2 mt-5 hidden ">
+        <p
+          onClick={() => navigate("/dashboard/projects")}
+          className="text-[#43465499] text-[12px] font-bold uppercase cursor-pointer hover:text-[#003D9B]"
+        >
+          Projects
+        </p>
+
+ 
+
+       <span className="text-[#43465466] text-[12px] font-bold">&gt;</span>
+           <p
+          onClick={() => navigate("/dashboard/project/"+projectId+"/epics")}
+          className="text-[#43465499] text-[12px] font-bold uppercase cursor-pointer hover:text-[#003D9B]"
+        >
+          Epics
+        </p>
+
+        <span className="text-[#43465466] text-[12px] font-bold">&gt;</span>
+
+        <p className="text-[#003D9B] text-[12px] font-bold uppercase cursor-pointer">
+          New Epic
+        </p>
+      </div>
+
       <div className="py-5">
         <h3 className="text-[30px] font-(--headline-lg-weight) text-(--color-slate-dark-blue)">
           Create New Epic
@@ -100,7 +146,6 @@ export default function CreateEpic() {
         </p>
       </div>
 
-      {/* Form Card */}
       <div
         className="
           flex flex-col
@@ -111,7 +156,7 @@ export default function CreateEpic() {
           p-2 md:p-12
         "
       >
-        {/* Status Banner */}
+     
         {status.type && (
           <div
             className={`relative p-3 pr-10 rounded-sm text-sm border transition-all mb-6 ${
@@ -135,7 +180,7 @@ export default function CreateEpic() {
           className="flex flex-col items-start pb-4 w-full"
           onSubmit={handleSubmit(handleSubmitForm)}
         >
-          {/* Title Field */}
+     
           <div className="mb-6 w-full flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-6">
             <div className="w-full sm:w-40 shrink-0 sm:pt-2">
               <label
@@ -156,36 +201,14 @@ export default function CreateEpic() {
                 {...register("title")}
               />
               {errors.title && (
-                <p className="error-message flex items-center gap-1 mt-1">
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 13 13"
-                    fill="none"
-                    className="shrink-0"
-                  >
-                    <circle
-                      cx="6.5"
-                      cy="6.5"
-                      r="6"
-                      stroke="currentColor"
-                      strokeWidth="1"
-                    />
-                    <path
-                      d="M6.5 3.5v3.5"
-                      stroke="currentColor"
-                      strokeWidth="1.2"
-                      strokeLinecap="round"
-                    />
-                    <circle cx="6.5" cy="9" r="0.6" fill="currentColor" />
-                  </svg>
+               <p className="error-message mt-1">
                   {errors.title.message}
                 </p>
               )}
             </div>
           </div>
 
-          {/* Description Field */}
+     
           <div className="mb-6 w-full flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-6">
             <div className="w-full sm:w-40 shrink-0 sm:pt-2">
               <label
@@ -226,27 +249,27 @@ export default function CreateEpic() {
           </div>
 
           <div className="mb-8 w-full flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-6">
-          
             <div className="flex-1 w-full flex flex-col sm:flex-row gap-4">
-             
               <div className="flex-1">
-              
-              <label className="text-[11px] font-semibold uppercase tracking-wide text-(--color-slate-medium-blue) block">
-                ASSIGNEE
-              </label>
-          
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-(--color-slate-medium-blue) block">
+                  ASSIGNEE
+                </label>
+
                 <div className="relative mt-2">
                   <select
-                    className="
-                      w-full appearance-none
-                      bg-(--color-surface-highest)
-                      rounded-sm px-4 py-2.5 text-sm
-                      text-(--color-slate-medium-blue)
-                      outline-none border-none cursor-pointer
-                    "
                     {...register("assignee")}
+                    defaultValue=""
+                    className="w-full appearance-none bg-(--color-surface-highest) rounded-sm px-4 py-2.5 text-sm text-[#041B3C] outline-none border-none cursor-pointer"
                   >
-                    <option value="">Select a member...</option>
+                    <option value="" disabled hidden>
+                      Select a member...
+                    </option>
+
+                    {members.map((member) => (
+                      <option key={member.member_id} value={member.user_id}>
+                        {member.metadata?.name || member.email}
+                      </option>
+                    ))}
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
                     <svg
@@ -268,7 +291,6 @@ export default function CreateEpic() {
                 </div>
               </div>
 
-              {/* Deadline Input */}
               <div className="flex-1">
                 <label className="text-[11px] font-semibold uppercase tracking-wide text-(--color-slate-medium-blue) block mb-1.5">
                   DEADLINE
@@ -277,23 +299,35 @@ export default function CreateEpic() {
                   type="date"
                   placeholder="mm/dd/yyyy"
                   {...register("deadline")}
+                  className="hide-date-icon"
+                    min={new Date().toISOString().split("T")[0]}
+                  
                 />
+                {errors.deadline && (
+                  <p className="error-message mt-1">
+                    {errors.deadline.message}
+                  </p>
+                )}
               </div>
             </div>
           </div>
-          <div className="flex justify-end w-full gap-3 pt-6">
-            <Button
-              type="button"
-              variant="text"
-              color="var(--color-slate-medium-blue)"
-              onClick={() => navigate(-1)}
-            >
-              Cancel
-            </Button>
+          <div className="flex flex-col sm:flex-row justify-end w-full gap-3 pt-6">
+          <Button
+            className="w-full sm:w-auto"
+            type="button"
+            variant="text"
+            color="var(--color-slate-medium-blue)"
+          >
+            Cancel
+          </Button>
 
-            <Button disabled={isSubmitting} type="submit">
-              {isSubmitting ? "Creating..." : "Create Epic"}
-            </Button>
+          <Button
+            className="w-full sm:w-auto"
+            disabled={isSubmitting}
+            type="submit"
+          >
+            {isSubmitting ? "Creating..." : "Create Epic"}
+          </Button>
           </div>
         </form>
       </div>

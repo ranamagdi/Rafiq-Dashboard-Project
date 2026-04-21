@@ -1,12 +1,14 @@
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import { useState, useEffect, useRef } from "react";
+import NewMembersPopup from "../../../components/members/NewMembersPopup";
 import {
   createProject,
   updateProject,
   getProject,
 } from "../../../services/endpoints";
 import { useForm } from "react-hook-form";
+import type { ApiError } from "../../../types/apiTypes";
 import { useWatch, type SubmitHandler } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,16 +27,10 @@ const projectSchema = z.object({
 });
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
-type ApiError = {
-  message?: string;
-  response?: {
-    data?: {
-      message?: string;
-    };
-  };
-};
+
 
 export default function Projects() {
+  const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const { projectId } = useParams();
   const [initialName, setInitialName] = useState("");
@@ -165,8 +161,9 @@ export default function Projects() {
             {isEditMode ? "Edit Project" : "Add New Project"}
           </h2>
         </div>
+        {isEditMode&&
         <div className="col-span-12 md:col-span-2 justify-end hidden sm:flex">
-          <Button className="flex justify-center gap-2 items-center">
+          <Button className="flex justify-center gap-2 items-center" onClick={() => setOpen(true)}>
             <svg
               width="19"
               height="14"
@@ -182,7 +179,9 @@ export default function Projects() {
             Invite Member
           </Button>
         </div>
+          }
       </div>
+      
 
       <div
         className="
@@ -360,6 +359,7 @@ export default function Projects() {
           process.
         </span>
       </div>
+      {open && <NewMembersPopup onClose={() => setOpen(false)} />}
     </div>
   );
 }

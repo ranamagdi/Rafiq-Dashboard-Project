@@ -28,13 +28,27 @@ export type ApiResponse<T = unknown> = {
   data: T;
   headers: Headers;
 };
+
 export type ApiError = Error & {
+    message?: string;
   response?: {
     status: number;
-    data: unknown;
+    data: {
+      message?: string;
+    };
+  };
+ 
+};
+export type Member = {
+  member_id: string;
+  project_id: string;
+  user_id: string;
+  role: string;
+  email: string;
+  metadata: {
+    name?: string;
   };
 };
-
 export interface LoginResponse {
   access_token: string;
   refresh_token: string;
