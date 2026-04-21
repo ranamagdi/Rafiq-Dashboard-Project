@@ -87,10 +87,11 @@ const Signup = () => {
           department: data.department || "",
         },
       });
-      const { access_token, refresh_token } = response.data;
+      const { access_token, refresh_token, expires_at } = response.data;
 
       setCookie("access_token", access_token);
       setCookie("refresh_token", refresh_token);
+      setCookie("expires_at", expires_at.toString(), { expiresAt: expires_at });
 
        dispatch(fetchUser());
 

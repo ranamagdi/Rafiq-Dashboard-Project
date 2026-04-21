@@ -5,34 +5,31 @@ type CookieOptions = {
   path?: string;
   sameSite?: "Strict" | "Lax" | "None";
   secure?: boolean;
+  expiresAt?: number; 
 };
 
 export const useCookie = () => {
 
-  const setCookie = useCallback(
-    (
-      name: string,
-      value: string,
-      options: CookieOptions = {}
-    ) => {
-      const {
-        days = 7,
-        path = "/",
-        sameSite = "Strict",
-        secure = true,
-      } = options;
+const setCookie = useCallback(
+  (name: string, value: string, options: CookieOptions = {}) => {
+    const {
+      days = 7,
+      expiresAt,
+      path = "/",
+      sameSite = "Strict",
+      secure = true,
+    } = options;
 
-      const expires = new Date(
-        Date.now() + days * 864e5
-      ).toUTCString();
+    const expires = expiresAt
+      ? new Date(expiresAt * 1000).toUTCString()
+      : new Date(Date.now() + days * 864e5).toUTCString();
 
-      document.cookie = `${name}=${value}; expires=${expires}; path=${path}; SameSite=${sameSite}; ${
-        secure ? "Secure;" : ""
-      }`;
-    },
-    []
-  );
-
+    document.cookie = `${name}=${value}; expires=${expires}; path=${path}; SameSite=${sameSite}; ${
+      secure ? "Secure;" : ""
+    }`;
+  },
+  []
+);
 
   const getCookie = useCallback((name: string) => {
     return document.cookie
@@ -44,6 +41,10 @@ export const useCookie = () => {
   const deleteCookie = useCallback((name: string, path = "/") => {
     document.cookie = `${name}=; Max-Age=0; path=${path}`;
   }, []);
+  const clearAuth = () => {
+  document.cookie = "access_token=; Max-Age=0; path=/";
+  document.cookie = "refresh_token=; Max-Age=0; path=/";
+};
 
-  return { setCookie, getCookie, deleteCookie };
+  return { setCookie, getCookie, deleteCookie, clearAuth };
 };

@@ -37,26 +37,40 @@ const Login = () => {
   } = useForm<FormData>({
     mode: "onChange",
     resolver: zodResolver(loginSchema),
+      defaultValues: {
+    email: import.meta.env.DEV ? "doha@gmail.com" : "",
+    password: import.meta.env.DEV ? "Password123!" : "",
+  },
   });
 
-  const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
-    try {
-      setErrorMessage(null);
-      const response = await login(data.email, data.password);
-      const { access_token, refresh_token } = response.data;
-      setCookie("access_token", access_token);
-      setCookie("refresh_token", refresh_token);
-      
-    dispatch(fetchUser());
-      navigate("/dashboard");
-    } catch (error) {
-      if (error instanceof Error) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage("An error occurred during sign in");
-      }
+const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
+  try {
+    setErrorMessage(null);
+
+    const response = await login(data.email, data.password);
+
+    const { access_token, refresh_token, expires_at } = response.data;
+
+ 
+    setCookie("access_token", access_token, {
+      expiresAt: expires_at,
+    });
+
+  
+    if (remember) {
+      setCookie("refresh_token", refresh_token, {
+        days: 30, 
+      });
     }
-  };
+
+    dispatch(fetchUser());
+    navigate("/dashboard");
+  } catch (error) {
+    setErrorMessage(
+      error instanceof Error ? error.message : "An error occurred during sign in"
+    );
+  }
+};
 
   return (
     <div className="h-screen flex items-center justify-center">

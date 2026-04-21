@@ -7,7 +7,10 @@ const getCookie = (name: string) => {
     .find((row) => row.startsWith(name + "="))
     ?.split("=")[1];
 };
-
+const clearAuth = () => {
+  document.cookie = "access_token=; Max-Age=0; path=/";
+  document.cookie = "refresh_token=; Max-Age=0; path=/";
+};
 const safeJson = async (res: Response) => {
   const text = await res.text();
   try {
@@ -20,31 +23,48 @@ const safeJson = async (res: Response) => {
 
 
 
-const refreshAccessToken = async () => {
-  const refreshToken = getCookie("refresh_token");
+const refreshAccessToken = async (): Promise<string> => {
+  try {
+    const refreshToken = getCookie("refresh_token");
 
-  if (!refreshToken) throw new Error("No refresh token");
-
-  const res = await fetch(
-    `${BASE_URL}/auth/v1/token?grant_type=refresh_token`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: import.meta.env.VITE_API_KEY,
-      },
-      body: JSON.stringify({ refresh_token: refreshToken }),
-      credentials: "omit",
+    if (!refreshToken) {
+      throw new Error("No refresh token found");
     }
-  );
 
-  if (!res.ok) throw new Error("Refresh failed");
+    const res = await fetch(
+      `${BASE_URL}/auth/v1/token?grant_type=refresh_token`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_API_KEY,
+        },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+        credentials: "omit",
+      }
+    );
 
-  const data = await res.json();
+    const data = await res.json();
 
-  document.cookie = `access_token=${data.access_token}; path=/`;
+    if (!res.ok) {
+      throw new Error(data?.msg || "Refresh token request failed");
+    }
 
-  return data.access_token;
+    if (!data?.access_token) {
+      throw new Error("No access token returned from refresh");
+    }
+
+ 
+    document.cookie = `access_token=${data.access_token}; path=/`;
+
+    return data.access_token;
+  } catch (error) {
+    console.error("refreshAccessToken error:", error);
+
+   clearAuth();
+
+    throw error; 
+  }
 };
 const request = async <T = unknown>(
   endpoint: string,

@@ -39,6 +39,7 @@ export interface LoginResponse {
   access_token: string;
   refresh_token: string;
   user_metadata: UserMetaData;
+  expires_at: number;
 }
 
 export type ApiUser = {
