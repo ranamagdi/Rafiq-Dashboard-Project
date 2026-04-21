@@ -68,14 +68,22 @@ export default function Projects() {
     [],
   );
 
- const fetchProjectsRef = useRef(fetchProjects);
+const prevIsMobileRef = useRef(isMobile);
 
 useEffect(() => {
-  fetchProjectsRef.current = fetchProjects;
-}, [fetchProjects]);
+  if (isMobile) return;
 
+  // Skip if we just switched FROM mobile to desktop
+  if (prevIsMobileRef.current === true) {
+    prevIsMobileRef.current = false;
+    return;
+  }
 
+  prevIsMobileRef.current = false;
+  fetchProjects(page, false);
+}, [page, fetchProjects, isMobile]);
   const hasFetched = useRef(false);
+  
   useEffect(() => {
     
     if (isMobile) {
