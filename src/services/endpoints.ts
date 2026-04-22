@@ -72,8 +72,15 @@ export const deleteEpic = (id: string) => {
   return api.delete(`/rest/v1/epics?id=eq.${id}`);
 };
 
-export const getProjectEpics = (projectId: string) => {
-  return api.get(`/rest/v1/project_epics?project_id=eq.${projectId}`);
+export const getProjectEpics = (projectId: string, limit: number, offset: number) => {
+  return api.get(`/rest/v1/project_epics?project_id=eq.${projectId}&limit=${limit}&offset=${offset}`, {
+    headers:{ Prefer: "count=exact" },
+  });
+};
+export const getProjectEpic = (projectId: string,id:string) => {
+  return api.get(`/rest/v1/project_epics?project_id=eq.${projectId}&id=eq.${id}`, {
+  
+  });
 };
 
 export const updateEpic = (id: string, data: Partial<Epic>) => {

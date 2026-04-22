@@ -316,6 +316,7 @@ export default function CreateEpic() {
             className="w-full sm:w-auto"
             type="button"
             variant="text"
+              onClick={() => navigate(`/dashboard/project/${projectId}/epics`)}
             color="var(--color-slate-medium-blue)"
           >
             Cancel

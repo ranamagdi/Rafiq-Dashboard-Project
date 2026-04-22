@@ -5,7 +5,7 @@ import Button from "../../../components/ui/Button";
 import { useNavigate } from "react-router-dom";
 import EmptyContent from "../../../components/common/Content/EmptyContent";
 import ErrorContent from "../../../components/common/Content/ErrorContent";
-import { IMAGES } from "../../../assets/index";
+import { ICONS, IMAGES } from "../../../assets/index";
 import { getProjects } from "../../../services/endpoints";
 import ProjectCardSkeleton from "../../../components/project/ProjectCardSkeleton";
 import useIsMobile from "../../../hooks/useIsMobile";
@@ -48,7 +48,7 @@ export default function Projects() {
           ? res
           : ((res as ApiResponse<Project[]>)?.data ?? []);
 
-        setHasMore(data.length === limit);
+        setHasMore(offset + data.length < total);
 
         if (shouldAppend) {
           setProjects((prev) => [...prev, ...data]);
@@ -73,7 +73,7 @@ const prevIsMobileRef = useRef(isMobile);
 useEffect(() => {
   if (isMobile) return;
 
-  // Skip if we just switched FROM mobile to desktop
+
   if (prevIsMobileRef.current === true) {
     prevIsMobileRef.current = false;
     return;
@@ -283,8 +283,11 @@ useEffect(() => {
       </div>
 
       {error && (
-        <ErrorContent title="Error" description={error.message}>
-          <Button onClick={() => window.location.reload()}>Retry</Button>
+        <ErrorContent title="Something went wrong" description="We're having trouble retrieving your
+        projects right now. Please try
+        again in a moment." 
+         icon={<img src={ICONS.error} alt="error" className="w-6 h-6" />}>
+          <Button onClick={() => window.location.reload()}>Retry connection</Button>
         </ErrorContent>
       )}
 

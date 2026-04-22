@@ -14,6 +14,8 @@ export interface Epic {
   deadline?: string;
 }
 
+export type StatusVariant = "TO_DO" | "IN_PROGRESS" | "DONE";
+
 export interface Task {
   id?: string;
   project_id: string;
@@ -22,8 +24,9 @@ export interface Task {
   description?: string;
   assignee_id?: string;
   due_date?: string;
-  status: "TO_DO" | "IN_PROGRESS" | "DONE";
+  status: StatusVariant;
 }
+
 export type ApiResponse<T = unknown> = {
   data: T;
   headers: Headers;

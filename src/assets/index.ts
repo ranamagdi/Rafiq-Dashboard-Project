@@ -1,5 +1,6 @@
 //images
 import projectEmpty from './images/Abstract _Kinetic Blueprint_ Visual Element.png'
+import EpicEmpty from './images/Abstract _Epic_ Representation.png'
 // icons
 import dashboard from "./icons/dashboard.svg";
 import pen from "./icons/pen.png";
@@ -21,10 +22,14 @@ import eye from "./icons/eye.svg";
 import backArrow from "./icons/back-arrow.svg";
 import lockForgot from "./icons/lock-forgot.svg";
 import clock from "./icons/clock.svg";
+import search from "./icons/search.svg";
+import error from './icons/error.svg'
 import filledIconCheck from "./icons/filled-iconcheck.svg"
 
 export const IMAGES = {
-    projectEmpty
+    projectEmpty,
+    EpicEmpty
+
 }
 
 export const ICONS = {
@@ -49,5 +54,7 @@ export const ICONS = {
   backArrow,
   lockForgot,
   filledIconCheck,
+  search,
+  error,
 
 };

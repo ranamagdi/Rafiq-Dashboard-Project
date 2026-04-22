@@ -105,7 +105,7 @@ const NewMembersPopup = ({ onClose }: { onClose: () => void }) => {
               height="6"
               rx="3"
               fill="#C3C6D6"
-              fill-opacity="0.3"
+              fillOpacity="0.3"
             />
           </svg>
         </div>
