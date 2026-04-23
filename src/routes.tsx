@@ -11,6 +11,7 @@ import Projects from "./pages/dashboard/projects/index";
 import ProjectOps from  "./pages/dashboard/projects/project-operations";
 import Epics from "./pages/dashboard/epics";
 import EpicCreate from "./pages/dashboard/epics/epic-create";
+import Members from "./pages/dashboard/members";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -30,6 +31,7 @@ const AppRoutes = () => {
           <Route path="project/:projectId/edit" element={<ProjectOps />} />
           <Route path="project/:projectId/epics" element={<Epics />} />
           <Route path="project/:projectId/epic/add" element={<EpicCreate />} />
+            <Route path="project/:projectId/members" element={<Members />} />
           
         </Route>
       </Route>

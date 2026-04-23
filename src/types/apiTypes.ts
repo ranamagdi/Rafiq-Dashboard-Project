@@ -26,7 +26,17 @@ export interface Task {
   due_date?: string;
   status: StatusVariant;
 }
-
+export type ApiMember = {
+  member_id: string;
+  project_id: string;
+  user_id: string;
+  role: string;
+  email: string;
+  metadata?: {
+    name?: string;
+    email?: string;
+  };
+};
 export type ApiResponse<T = unknown> = {
   data: T;
   headers: Headers;
