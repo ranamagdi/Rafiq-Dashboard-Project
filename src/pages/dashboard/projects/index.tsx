@@ -97,9 +97,7 @@ export default function Projects() {
                 description={project.description}
                 createdAt={project.created_at}
                 projectId={project.id}
-                onClick={() =>
-                  navigate(`/dashboard/project/${project.id}/epics`)
-                }
+                to={`/dashboard/project/${project.id}/epics`}
               />
             </div>
           );

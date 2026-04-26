@@ -1,7 +1,7 @@
 import { formatDate } from "../utils/dateUtils";
 import { useEffect, useRef, useState } from "react";
 import { ICONS } from "../../assets";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,NavLink } from "react-router-dom";
 import { AddIcon, CalendarIcon, ProjectIcon } from "../ui/SvgIcons";
 
 type ProjectCardProps = {
@@ -10,6 +10,7 @@ type ProjectCardProps = {
   createdAt?: string;
   projectId?: string;
   onClick?: () => void;
+  to?:string;
   className?: string;
   variant?: "default" | "add";
 };
@@ -19,6 +20,7 @@ export default function ProjectCard({
   description,
   createdAt,
   onClick,
+  to,
   projectId,
   className,
   variant = "default",
@@ -59,8 +61,8 @@ export default function ProjectCard({
   }
 
   return (
-    <div
-      onClick={onClick}
+    <NavLink
+     to={to ?? ""}
       className={`
         bg-white rounded-lg p-8 
         hover:shadow-md transition cursor-pointer
@@ -120,6 +122,6 @@ export default function ProjectCard({
           </div>
         </div>
       )}
-    </div>
+    </NavLink>
   );
 }

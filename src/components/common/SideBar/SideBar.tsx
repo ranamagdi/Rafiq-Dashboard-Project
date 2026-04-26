@@ -4,7 +4,7 @@ import useIsMobile from "../../../hooks/useIsMobile";
 import { logout } from "../../../services/endpoints";
 import { clearUserMetaData } from "../../../store/slices/user/userSlice";
 import { useCookie } from "../../../hooks/useCookie";
-import { useLocation, useNavigate,useParams } from "react-router-dom";
+import { useLocation, NavLink, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../../hooks/reduxHooks";
 
 import {
@@ -35,51 +35,51 @@ type NavItem = {
   responsiveIcon?: React.ComponentType<IconProps>;
 };
 
-
-
 export default function Sidebar() {
   const { deleteCookie } = useCookie();
   const dispatch = useAppDispatch();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
+
   const isOpen = useAppSelector((state) => state.slider.isSidebarOpen);
   const isMobile = useIsMobile();
   const { projectId } = useParams();
-const getNavItems: (projectId?: string) => NavItem[] = (projectId?: string) => [
-  {
-    label: "Projects",
-    icon: ProjectsIcon,
-    path: "/dashboard/projects",
-    responsiveIcon: ProjectsIconResponsive,
-  },
-  ...(projectId
-    ? [
-        {
-          label: "Project Epics",
-          icon: EpicsIcon,
-          path: `/dashboard/project/${projectId}/epics`,
-        },
-        {
-          label: "Project Tasks",
-          icon: TasksIcon,
-          path: `/dashboard/project/${projectId}/tasks`,
-        },
-        {
-          label: "Project Members",
-          icon: MembersIcon,
-          path: `/dashboard/project/${projectId}/members`,
-        },
-        {
-          label: "Project Details",
-          icon: DetailsIcon,
-          path: `/dashboard/project/${projectId}/edit`,
-        },
-      ]
-    : []),
-];
-const navItems = getNavItems(projectId);
+  const getNavItems: (projectId?: string) => NavItem[] = (
+    projectId?: string,
+  ) => [
+    {
+      label: "Projects",
+      icon: ProjectsIcon,
+      path: "/dashboard/projects",
+      responsiveIcon: ProjectsIconResponsive,
+    },
+    ...(projectId
+      ? [
+          {
+            label: "Project Epics",
+            icon: EpicsIcon,
+            path: `/dashboard/project/${projectId}/epics`,
+          },
+          {
+            label: "Project Tasks",
+            icon: TasksIcon,
+            path: `/dashboard/project/${projectId}/tasks`,
+          },
+          {
+            label: "Project Members",
+            icon: MembersIcon,
+            path: `/dashboard/project/${projectId}/members`,
+          },
+          {
+            label: "Project Details",
+            icon: DetailsIcon,
+            path: `/dashboard/project/${projectId}/edit`,
+          },
+        ]
+      : []),
+  ];
+  const navItems = getNavItems(projectId);
 
   const handleLogout = async () => {
     try {
@@ -130,25 +130,22 @@ const navItems = getNavItems(projectId);
 
         <nav className="flex flex-col gap-0.5">
           {navItems.map((item) => {
-          const isActive = location.pathname.includes(item.path.split("/:")[0]);
+            const isActive = location.pathname.includes(
+              item.path.split("/:")[0],
+            );
 
             const IconComponent =
               isMobile && item.responsiveIcon ? item.responsiveIcon : item.icon;
 
             return (
-              <div
+              <NavLink
                 key={item.label}
-                onClick={() => {
-                  if (item.path) {
-                    navigate(item.path);
-                    if (isMobile) dispatch(closeSidebar());
-                  }
-                }}
+                to={item.path || "#"}
                 title={collapsed ? item.label : undefined}
                 className={`
-          group relative flex items-center gap-2.5 py-2.5 px-3 rounded-sm cursor-pointer 
-          ${isActive ? "bg-white shadow-[0px_1px_2px_0px_#0000000D]" : ""}
-        `}
+                group relative flex items-center gap-2.5 py-2.5 px-3 rounded-sm cursor-pointer 
+                ${isActive ? "bg-white shadow-[0px_1px_2px_0px_#0000000D]" : ""}
+              `}
               >
                 <span className="shrink-0">
                   <IconComponent isActive={isActive} />
@@ -163,7 +160,7 @@ const navItems = getNavItems(projectId);
                     {item.label}
                   </span>
                 )}
-              </div>
+              </NavLink>
             );
           })}
         </nav>
