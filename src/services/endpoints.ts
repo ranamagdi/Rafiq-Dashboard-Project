@@ -82,6 +82,9 @@ export const getProjectEpic = (projectId: string,id:string) => {
   
   });
 };
+export const getProjectEpicsSearch = (projectId: string, searchTerm: string) => {
+  return api.get(`/rest/v1/project_epics?project_id=eq.${projectId}&title=ilike.%25${(searchTerm)}%25`);
+};
 
 export const updateEpic = (id: string, data: Partial<Epic>) => {
   return api.patch(`/rest/v1/epics?id=eq.${id}`, data);

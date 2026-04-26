@@ -1,6 +1,7 @@
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import { useState, useEffect } from "react";
+import {SelectArrow} from '../../../components/ui/SvgIcons'
 import { createEpic, getProjectMembers } from "../../../services/endpoints";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -272,21 +273,7 @@ export default function CreateEpic() {
                     ))}
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                    <svg
-                      width="10"
-                      height="6"
-                      viewBox="0 0 10 6"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M1 1L5 5L9 1"
-                        stroke="var(--color-slate-medium-blue)"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                   <SelectArrow/>
                   </div>
                 </div>
               </div>

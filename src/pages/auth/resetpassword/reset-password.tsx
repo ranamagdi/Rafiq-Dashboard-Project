@@ -7,6 +7,7 @@ import { useForm, useWatch } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
+import {HidePassword,ShowPassword} from '../../../components/ui/SvgIcons'
 import { updatePassword } from "../../../services/endpoints";
 import { useState } from "react";
 import { useCookie } from "../../../hooks/useCookie";
@@ -226,29 +227,9 @@ const ResetPassword = () => {
                     className="absolute inset-y-0 inset-e-0 flex items-center px-3 text-muted-foreground hover:text-primary-focus"
                   >
                     {show ? (
-                      <svg
-                        className="size-4"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#737685"
-                        strokeWidth="2"
-                      >
-                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
+                     <ShowPassword/>
                     ) : (
-                      <svg
-                        className="size-4"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#737685"
-                        strokeWidth="2"
-                      >
-                        <path d="M2 2L22 22" />
-                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-                        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7" />
-                        <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7" />
-                      </svg>
+                     <HidePassword/>
                     )}
                   </button>
                 </div>

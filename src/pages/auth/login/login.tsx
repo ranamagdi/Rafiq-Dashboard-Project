@@ -18,7 +18,7 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [remember, setRemember] = useState(false);
+  const [remember, setRemember] = useState(true);
 
   const loginSchema = z.object({
     email: z.email("Invalid email address").nonempty("Email is required"),
