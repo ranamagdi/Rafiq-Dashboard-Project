@@ -1,8 +1,10 @@
 import { formatDate } from "../utils/dateUtils";
 import { useEffect, useRef, useState } from "react";
 import { ICONS } from "../../assets";
-import { useNavigate,NavLink } from "react-router-dom";
+import { useNavigate, NavLink } from "react-router-dom";
 import { AddIcon, CalendarIcon, ProjectIcon } from "../ui/SvgIcons";
+import { useDispatch } from "react-redux";
+import { setProject } from "../../store/project/projectSlice";
 
 type ProjectCardProps = {
   title?: string;
@@ -10,7 +12,7 @@ type ProjectCardProps = {
   createdAt?: string;
   projectId?: string;
   onClick?: () => void;
-  to?:string;
+  to?: string;
   className?: string;
   variant?: "default" | "add";
 };
@@ -28,6 +30,7 @@ export default function ProjectCard({
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -62,12 +65,17 @@ export default function ProjectCard({
 
   return (
     <NavLink
-     to={to ?? ""}
+      to={to ?? ""}
       className={`
         bg-white rounded-lg p-8 
         hover:shadow-md transition cursor-pointer
         flex flex-col gap-2
         ${className}`}
+      onClick={() => {
+        if (projectId && title) {
+          dispatch(setProject({ id: projectId, title }));
+        }
+      }}
     >
       <div className="flex justify-between items-start relative" ref={menuRef}>
         {title && (
@@ -81,14 +89,14 @@ export default function ProjectCard({
           }}
           className="p-1"
         >
-         <ProjectIcon/>
+          <ProjectIcon />
         </button>
 
         {openMenu && (
           <div className="absolute right-0 top-6 w-40 bg-white shadow-lg border border-gray-100 rounded-md z-50">
             <button
               onClick={(e) => {
-                 e.stopPropagation();
+                e.stopPropagation();
                 navigate(`/dashboard/project/${projectId}/edit`);
                 setOpenMenu(false);
               }}
@@ -116,7 +124,7 @@ export default function ProjectCard({
           </span>
 
           <div className="flex items-center gap-2 text-[14px] font-medium text-[#434654]">
-             <CalendarIcon className="sm:hidden"/>
+            <CalendarIcon className="sm:hidden" />
 
             <span>{formatDate(createdAt)}</span>
           </div>

@@ -14,7 +14,7 @@ import EpicCardSkeleton from "../../../components/epic/EpicCardSkelton";
 import useIsMobile from "../../../hooks/useIsMobile";
 import Input from "../../../components/ui/Input";
 import EpicDetailsPopup from "../../../components/epic/EpicDetailsPopup";
-
+import Breadcrumb from "../../../components/common/Breadcramb/Breadcrumb";
 export default function Epics() {
   type Epic = {
     id: string;
@@ -124,28 +124,7 @@ export default function Epics() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
       {!error && (epics.length !== 0 || loading) && (
         <>
-          <>
-            <div className="md:flex items-center gap-2 mt-5 hidden ">
-              <p
-                onClick={() => navigate("/dashboard/projects")}
-                className="text-[#43465499] text-[12px] font-bold uppercase cursor-pointer hover:text-[#003D9B]"
-              >
-                Projects
-              </p>
-
-              <span className="text-[#43465466] text-[12px] font-bold">
-                &gt;
-              </span>
-              <p
-                onClick={() =>
-                  navigate("/dashboard/project/" + projectId + "/epics")
-                }
-                className="text-[#003D9B] text-[12px] font-bold uppercase cursor-pointer"
-              >
-                Epics
-              </p>
-            </div>
-          </>
+         <Breadcrumb/>
           <>
             <div className="grid grid-cols-12 items-center">
               <div className="col-span-12 md:col-span-8">

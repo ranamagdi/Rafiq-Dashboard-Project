@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import {  useParams } from "react-router-dom";
 import Button from "../../../components/ui/Button";
 import { getProjectMembers } from "../../../services/endpoints";
 import {InviteMembers,RoleIcon} from '../../../components/ui/SvgIcons'
@@ -8,6 +8,7 @@ import { ICONS } from "../../../assets";
 import { getInitials } from "../../../components/utils/nameUtils";
 import type { ApiMember } from "../../../types/apiTypes";
 import ErrorContent from "../../../components/common/Content/ErrorContent";
+import Breadcrumb from "../../../components/common/Breadcramb/Breadcrumb";
 
 type Member = {
   id: string;
@@ -37,7 +38,7 @@ export default function Members() {
   const [open, setOpen] = useState<boolean>(false);
 
   const { projectId } = useParams<{ projectId: string }>();
-  const navigate = useNavigate();
+
 
   useEffect(() => {
     if (!projectId) return;
@@ -76,19 +77,7 @@ export default function Members() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
-      <div className="hidden md:flex items-center gap-2 mt-5">
-        <p
-          onClick={() => navigate("/dashboard/projects")}
-          className="text-[#43465499] text-[12px] font-bold uppercase cursor-pointer hover:text-[#003D9B] transition-colors"
-        >
-          Projects
-        </p>
-
-        <span className="text-[#43465466] text-[12px] font-bold">&gt;</span>
-        <p className="text-[#003D9B] text-[12px] font-bold uppercase">
-          Members
-        </p>
-      </div>
+      <Breadcrumb/>
 
       <div className="flex items-center justify-center sm:justify-between mt-5 md:mt-0">
         <h2 className="text-[#041B3C] text-[28px] font-semibold">
