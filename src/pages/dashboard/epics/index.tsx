@@ -1,14 +1,11 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useState } from "react";
 import EpicCard from "../../../components/epic/EpicCard";
 import type { ApiResponse } from "../../../types/apiTypes";
 import Button from "../../../components/ui/Button";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  AddIcon,
-  EmprtyEpicContent,
-  NextPage,
-  PreviousPage,
-} from "../../../components/ui/SvgIcons";
+import { AddIcon, EmptyEpicContent } from "../../../components/ui/SvgIcons";
+import { usePagination } from "../../../hooks/usePagination";
+import Pagination from "../../../components/common/Pagination/Pagination";
 import EmptyContent from "../../../components/common/Content/EmptyContent";
 import ErrorContent from "../../../components/common/Content/ErrorContent";
 import { IMAGES, ICONS } from "../../../assets/index";
@@ -31,123 +28,98 @@ export default function Epics() {
     description?: string;
   };
   const [selectedEpic, setSelectedEpic] = useState<Epic | null>(null);
-  const [epics, setEpics] = useState<Epic[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-
   const navigate = useNavigate();
   const { projectId } = useParams();
-  const observer = useRef<IntersectionObserver | null>(null);
   const isMobile = useIsMobile();
-  const limit = 10;
-  const [totalEpics, setTotalEpics] = useState(0);
+
+  const {
+    items: epics,
+    loading,
+    error,
+    goToPage,
+    isOutOfRange,
+    currentPage,
+    totalItems,
+    hasMore,
+    isInvalidPage,
+    handlePreviousPage,
+    handleNextPage,
+    handlePageClick,
+    getVisiblePages,
+    lastElementRef,
+    setItems: setEpics,
+  } = usePagination<Epic>({
+    fetchFn: async (limit, offset) => {
+      const res = await getProjectEpics(projectId!, limit, offset);
+      const contentRange = res.headers?.get?.("content-range") ?? null;
+      const total = contentRange ? parseInt(contentRange.split("/")[1], 10) : 0;
+      const data: Epic[] = Array.isArray(res)
+        ? (res as Epic[])
+        : ((res as ApiResponse<Epic[]>)?.data ?? []);
+      return { data, total };
+    },
+  });
   const handleDeleteEpic = (id: string) => {
     setEpics((prev) => prev.filter((epic) => epic.id !== id));
   };
-  const fetchEpics = useCallback(
-    async (pageNum: number, shouldAppend: boolean) => {
-      setLoading(true);
-      setError(null);
 
-      try {
-        const offset = (pageNum - 1) * limit;
-        const res = await getProjectEpics(projectId!, limit, offset);
-        const contentRange = res.headers.get("content-range");
-
-        const total = contentRange
-          ? parseInt(contentRange.split("/")[1], 10)
-          : 0;
-
-        const data: Epic[] = Array.isArray(res)
-          ? res
-          : ((res as ApiResponse<Epic[]>)?.data ?? []);
-
-        setHasMore(offset + data.length < total);
-        if (shouldAppend) {
-          setEpics((prev) => [...prev, ...data]);
-          setTotalEpics((prev) => prev + data.length);
-        } else {
-          setEpics(data);
-          setTotalEpics(total);
-        }
-      } catch (err: unknown) {
-        setError(new Error((err as Error)?.message || "Failed to load epics"));
-      } finally {
-        setLoading(false);
-      }
-    },
-    [projectId],
-  );
-
-  const prevIsMobileRef = useRef(isMobile);
-
-  useEffect(() => {
-    if (isMobile) return;
-
-    if (prevIsMobileRef.current === true) {
-      prevIsMobileRef.current = false;
-      return;
-    }
-
-    prevIsMobileRef.current = false;
-    fetchEpics(page, false);
-  }, [page, fetchEpics, isMobile]);
-  const hasFetched = useRef(false);
-
-  useEffect(() => {
-    if (isMobile) {
-      if (hasFetched.current) return;
-      hasFetched.current = true;
-      setEpics([]);
-      setTotalEpics(0);
-      setPage(1);
-      setHasMore(true);
-      fetchEpics(1, false);
-    }
-  }, [isMobile, fetchEpics]);
-
-  const lastEpicElementRef = useCallback(
-    (node: HTMLDivElement) => {
-      if (!isMobile || loading) return;
-      if (observer.current) observer.current.disconnect();
-
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          const nextPage = page + 1;
-          setPage(nextPage);
-          fetchEpics(nextPage, true);
-        }
-      });
-
-      if (node) observer.current.observe(node);
-    },
-    [isMobile, loading, hasMore, page, fetchEpics],
-  );
-
-  const handlePreviousPage = () => {
-    if (page > 1) {
-      setPage((p) => p - 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
-
-  const handleNextPage = () => {
-    if (hasMore) {
-      setPage((p) => p + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
-  const getVisiblePages = () => {
-    const pages = [];
-
-    if (page > 1) pages.push(page - 1);
-    pages.push(page);
-    if (hasMore) pages.push(page + 1);
-
-    return pages;
-  };
+  if (isInvalidPage ||isOutOfRange) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-9">
+        <EmptyContent
+          className="bg-white border border-[#FFFFFF66] backdrop-blur-xs rounded-4xl"
+          image={IMAGES.EpicEmpty}
+          title="No epics in this project yet."
+          description="Break down your large project into manageable
+          epics to track progress better and maintain
+          architectural clarity."
+        >
+          <Button
+            className="flex items-center gap-2 justify-center align-middle"
+            onClick={() => goToPage(1)}
+          >
+            Go to Page 1
+         
+          </Button>
+          <div className="flex justify-between align-middle items-center mt-10 w-[70%]">
+            <div className="bg-[#F1F3FF] rounded-lg flex flex-col justify-start p-5 items-start gap-3 w-52">
+              <div className="bg-white rounded-sm p-2 w-10">
+                <EmptyEpicContent />
+              </div>
+              <h4 className="text-[#041B3C] font-semibold text-[16px]">
+                High-Level Goals
+              </h4>
+              <p className="text-[12px] font-normal text-[#434654] text-left">
+                Define the broad objectives that span across multiple cycles.
+              </p>
+            </div>
+            <div className="bg-[#F1F3FF] rounded-lg flex flex-col justify-start p-5 items-start gap-3 w-52">
+              <div className="bg-white rounded-sm p-2 w-10">
+                <EmptyEpicContent variant="second" />
+              </div>
+              <h4 className="text-[#041B3C] font-semibold text-[16px]">
+                Hierarchy Design
+              </h4>
+              <p className="text-[12px] font-normal text-[#434654] text-left">
+                Link individual tasks to parent epics for a consolidated view.
+              </p>
+            </div>
+            <div className="bg-[#F1F3FF] rounded-lg flex flex-col justify-start p-5 items-start gap-3 w-52">
+              <div className="bg-white rounded-sm p-2 w-10">
+                <EmptyEpicContent variant="third" />
+              </div>
+              <h4 className="text-[#041B3C] font-semibold text-[16px]">
+                Track Velocity
+              </h4>
+              <p className="text-[12px] font-normal text-[#434654] text-left">
+                Visualize percentage completion at a macro project level.
+              </p>
+            </div>
+          </div>
+        </EmptyContent>
+      </div>
+    );
+  }
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
       {!error && (epics.length !== 0 || loading) && (
@@ -212,7 +184,7 @@ export default function Epics() {
         {epics.map((epic, index) => {
           const isLastElement = isMobile && epics.length === index + 1;
           return (
-            <div key={epic.id} ref={isLastElement ? lastEpicElementRef : null}>
+            <div key={epic.id} ref={isLastElement ? lastElementRef : null}>
               <EpicCard
                 id={epic.id}
                 title={epic.title}
@@ -254,57 +226,18 @@ export default function Epics() {
       </div>
 
       {!isMobile && !loading && epics.length > 0 && (
-        <div className="flex justify-between items-center">
-          <p className="text-(--color-forms-texts) text-[12px] font-medium">
-            Showing {epics.length} of {totalEpics} active epics
-          </p>
-          <div className="flex justify-center items-center gap-4 py-8">
-            <Button
-              disabled={page === 1}
-              onClick={handlePreviousPage}
-              className="bg-transparent border border-solid border-[#C3C6D6] border-opacity-30 px-3 h-8"
-            >
-              <PreviousPage />
-            </Button>
-            <div className="flex items-center gap-2">
-              {getVisiblePages().map((p, i) => (
-                <span
-                  key={i}
-                  className={`h-8 w-8 rounded-sm text-sm font-semibold flex items-center justify-center
-                    ${
-                      p === page
-                        ? "text-white bg-(--color-primary-container)"
-                        : "text-gray-700"
-                    }`}
-                >
-                  {p}
-                </span>
-              ))}
-
-              {hasMore && (
-                <span className="text-gray-700 font-medium text-sm">...</span>
-              )}
-            </div>
-
-            <Button
-              disabled={!hasMore}
-              onClick={handleNextPage}
-              className="bg-transparent border border-solid border-[#C3C6D6] border-opacity-30 px-3 h-8"
-            >
-              <NextPage />
-            </Button>
-          </div>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalItems={totalItems}
+          hasMore={hasMore}
+          itemsShown={epics.length}
+          label="projects"
+          getVisiblePages={getVisiblePages}
+          handlePreviousPage={handlePreviousPage}
+          handleNextPage={handleNextPage}
+          handlePageClick={handlePageClick}
+        />
       )}
-
-      <div className="flex justify-center py-4">
-        {isMobile &&
-          loading &&
-          epics.length > 0 &&
-          Array.from({ length: isMobile ? 3 : 6 }).map((_, i) => (
-            <EpicCardSkeleton key={`skeleton-${i}`} />
-          ))}
-      </div>
 
       {error && (
         <ErrorContent
@@ -320,61 +253,6 @@ export default function Epics() {
         </ErrorContent>
       )}
 
-      {!loading && epics.length === 0 && !error && (
-        <EmptyContent
-          className="bg-white border border-[#FFFFFF66] backdrop-blur-xs rounded-4xl"
-          image={IMAGES.EpicEmpty}
-          title="No epics in this project yet."
-          description="Break down your large project into manageable
-          epics to track progress better and maintain
-          architectural clarity."
-        >
-          <Button
-            className="flex items-center gap-2 justify-center align-middle"
-            onClick={() =>
-              navigate("/dashboard/project/" + projectId + "/epic/add")
-            }
-          >
-            <AddIcon />
-            Create First Epic
-          </Button>
-          <div className="flex justify-between align-middle items-center mt-10 w-[70%]">
-            <div className="bg-[#F1F3FF] rounded-lg flex flex-col justify-start p-5 items-start gap-3 w-52">
-              <div className="bg-white rounded-sm p-2 w-10">
-                <EmprtyEpicContent />
-              </div>
-              <h4 className="text-[#041B3C] font-semibold text-[16px]">
-                High-Level Goals
-              </h4>
-              <p className="text-[12px] font-normal text-[#434654] text-left">
-                Define the broad objectives that span across multiple cycles.
-              </p>
-            </div>
-            <div className="bg-[#F1F3FF] rounded-lg flex flex-col justify-start p-5 items-start gap-3 w-52">
-              <div className="bg-white rounded-sm p-2 w-10">
-                <EmprtyEpicContent variant="second" />
-              </div>
-              <h4 className="text-[#041B3C] font-semibold text-[16px]">
-                Hierarchy Design
-              </h4>
-              <p className="text-[12px] font-normal text-[#434654] text-left">
-                Link individual tasks to parent epics for a consolidated view.
-              </p>
-            </div>
-            <div className="bg-[#F1F3FF] rounded-lg flex flex-col justify-start p-5 items-start gap-3 w-52">
-              <div className="bg-white rounded-sm p-2 w-10">
-               <EmprtyEpicContent variant="third" />
-              </div>
-              <h4 className="text-[#041B3C] font-semibold text-[16px]">
-                Track Velocity
-              </h4>
-              <p className="text-[12px] font-normal text-[#434654] text-left">
-                Visualize percentage completion at a macro project level.
-              </p>
-            </div>
-          </div>
-        </EmptyContent>
-      )}
       {selectedEpic && (
         <EpicDetailsPopup
           id={selectedEpic?.id}

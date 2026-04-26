@@ -48,7 +48,7 @@ export default function ProjectCard({
         justify-center align-middle ${className}`}
       >
         <div className="w-10 h-10 rounded-xl bg-[#F1F3FF] flex items-center justify-center mb-3 p-3">
-          <AddIcon/>
+          <AddIcon color="var(--color-slate-medium-blue)" />
         </div>
 
         <p className="text-[14px] font-bold text-[#434654] uppercase">

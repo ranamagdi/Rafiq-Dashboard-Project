@@ -44,10 +44,12 @@ export type ApiResponse<T = unknown> = {
 
 export type ApiError = Error & {
     message?: string;
+    
   response?: {
     status: number;
     data: {
       message?: string;
+       code?: string;    
     };
   };
  
