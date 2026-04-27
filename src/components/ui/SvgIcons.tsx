@@ -243,6 +243,23 @@ export const AddIcon: React.FC<{ color?: string }> = ({ color }) => {
     </svg>
   );
 };
+export const PenEditIcon: React.FC<{ className?: string }> = ({ className }) => {
+  return (
+    <svg
+      className={`w-3.5 h-3.5 text-[#9CA3AF] opacity-100 transition-opacity ml-0.5 ${className || ""}`}
+      viewBox="0 0 16 16"
+      fill="none"
+    >
+      <path
+        d="M11.5 2.5a1.414 1.414 0 012 2L5 13H2v-3L11.5 2.5z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
 export const PreviousPage = () => {
   return (
     <svg

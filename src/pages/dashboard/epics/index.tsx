@@ -63,6 +63,11 @@ export default function Epics() {
     setEpics((prev) => prev.filter((epic) => epic.id !== id));
   };
 
+  const handleClosePopup=()=>{
+    setSelectedEpic(null);
+    goToPage(1)
+    
+  }
   if (isInvalidPage ||isOutOfRange) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-9">
@@ -243,7 +248,7 @@ export default function Epics() {
           createdBy={selectedEpic?.created_by.name}
           deadline={selectedEpic?.deadline}
           isOpen={true}
-          onClose={() => setSelectedEpic(null)}
+          onClose={() => handleClosePopup()}
         />
       )}
     </div>

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { StatusVariant } from "../../types/apiTypes";
 import {getInitials}from "../utils/nameUtils";
 import { deleteEpic } from "../../services/endpoints";
-import {DotsIcon,CalendarIcon,PersonIcon,PenIcon,TrashIcon}from '../ui/SvgIcons'
+import {DotsIcon,CalendarIcon,PersonIcon,TrashIcon}from '../ui/SvgIcons'
 
 type EpicCardProps = {
     id: string;
@@ -167,13 +167,13 @@ function getInitialsBg() {
             {openMenu && (
               <div className="absolute right-0 top-8 w-44 bg-white shadow-xl border border-gray-100
                rounded-xl z-50 overflow-hidden">
-                <button
+                {/* <button
               
                   className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#434654] hover:bg-gray-50 transition-colors"
                 >
                   <PenIcon />
                   Edit Epic
-                </button>
+                </button> */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

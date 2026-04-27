@@ -10,8 +10,12 @@ export interface Epic {
   title: string;
   description: string;
   project_id: string;
-  assignee_id?: string;
+  assignee_id?: string | null;
+  created_at?:string;
+  created_by?:{id?:string;name?:string}
   deadline?: string;
+  assignee_name?:string;
+  assignee_avatar?: string 
 }
 
 export type StatusVariant = "TO_DO" | "IN_PROGRESS" | "DONE";
@@ -80,4 +84,27 @@ export type ApiUser = {
     email_verified?: boolean;
     phone_verified?: boolean;
   };
+};
+
+
+
+
+export type EpicCardProps = {
+  id: string;
+  title?: string;
+  description?: string;
+  createdAt?: string;
+  projectId?: string;
+  epicId?: string;
+  assigneeName?: string;
+  assigneeAvatar?: string;
+  status?: StatusVariant;
+  createdBy?: string;
+  createdByAvatar?: string;
+  deadline?: string;
+  tasks?: Task[];
+  className?: string;
+  isOpen?: boolean;
+  onClose?: () => void;
+  onAddTask?: () => void;
 };
