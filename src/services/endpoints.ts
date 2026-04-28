@@ -71,10 +71,23 @@ export const createEpic = (data: Partial<Epic>) => {
 export const deleteEpic = (id: string) => {
   return api.delete(`/rest/v1/epics?id=eq.${id}`);
 };
+export const getProjectEpics = (
+  projectId: string,
+  limit: number,
+  offset: number,
+  searchTerm?: string
+) => {
+  const hasSearch =
+    searchTerm !== undefined &&
+    searchTerm !== null &&
+    searchTerm.trim() !== "";
 
-export const getProjectEpics = (projectId: string, limit: number, offset: number) => {
-  return api.get(`/rest/v1/project_epics?project_id=eq.${projectId}&limit=${limit}&offset=${offset}`, {
-    headers:{ Prefer: "count=exact" },
+  const url = hasSearch
+    ? `/rest/v1/project_epics?project_id=eq.${projectId}&limit=${limit}&offset=${offset}&title=ilike.%25${searchTerm}%25`
+    : `/rest/v1/project_epics?project_id=eq.${projectId}&limit=${limit}&offset=${offset}`;
+
+  return api.get(url, {
+    headers: { Prefer: "count=exact" },
   });
 };
 export const getProjectEpic = (projectId: string, id?: string) => {
@@ -85,9 +98,6 @@ export const getProjectEpic = (projectId: string, id?: string) => {
   }
 
   return api.get(url);
-};
-export const getProjectEpicsSearch = (projectId: string, searchTerm: string) => {
-  return api.get(`/rest/v1/project_epics?project_id=eq.${projectId}&title=ilike.%25${(searchTerm)}%25`);
 };
 
 export const updateEpic = (id: string, data: Partial<Epic>) => {

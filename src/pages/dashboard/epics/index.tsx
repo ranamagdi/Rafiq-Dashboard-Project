@@ -28,6 +28,7 @@ export default function Epics() {
     description?: string;
   };
   const [selectedEpic, setSelectedEpic] = useState<Epic | null>(null);
+
   const navigate = useNavigate();
   const { projectId } = useParams();
   const isMobile = useIsMobile();
@@ -47,10 +48,12 @@ export default function Epics() {
     handlePageClick,
     getVisiblePages,
     lastElementRef,
+    searchTerm,
+    setSearchTerm,
     setItems: setEpics,
   } = usePagination<Epic>({
-    fetchFn: async (limit, offset) => {
-      const res = await getProjectEpics(projectId!, limit, offset);
+    fetchFn: async (limit, offset, searchTerm) => {
+      const res = await getProjectEpics(projectId!, limit, offset, searchTerm);
       const contentRange = res.headers?.get?.("content-range") ?? null;
       const total = contentRange ? parseInt(contentRange.split("/")[1], 10) : 0;
       const data: Epic[] = Array.isArray(res)
@@ -142,6 +145,8 @@ export default function Epics() {
                     iconPosition="left"
                     className="h-12 w-full sm:h-10 "
                     icon={ICONS.search}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
 
@@ -220,7 +225,58 @@ export default function Epics() {
           handlePageClick={handlePageClick}
         />
       )}
-
+      {!loading && epics.length === 0 && !error && (
+         <EmptyContent
+          className="bg-white border border-[#FFFFFF66] backdrop-blur-xs rounded-4xl"
+          image={IMAGES.EpicEmpty}
+          title="No epics in this project yet."
+          description="Break down your large project into manageable
+          epics to track progress better and maintain
+          architectural clarity."
+        >
+          <Button
+            className="flex items-center gap-2 justify-center align-middle"
+            onClick={() => goToPage(1)}
+          >
+            Go to Page 1
+          </Button>
+          <div className="flex  flex-wrap gap-3 justify-between align-middle items-center mt-10 mb-9 sm:mb-0 w-[70%]">
+            <div className="bg-[#F1F3FF] rounded-lg flex flex-col justify-start p-5 items-start gap-3 w-52">
+              <div className="bg-white rounded-sm p-2 w-10">
+                <EmptyEpicContent />
+              </div>
+              <h4 className="text-[#041B3C] font-semibold text-[16px]">
+                High-Level Goals
+              </h4>
+              <p className="text-[12px] font-normal text-[#434654] text-left">
+                Define the broad objectives that span across multiple cycles.
+              </p>
+            </div>
+            <div className="bg-[#F1F3FF] rounded-lg flex flex-col justify-start p-5 items-start gap-3 w-52">
+              <div className="bg-white rounded-sm p-2 w-10">
+                <EmptyEpicContent variant="second" />
+              </div>
+              <h4 className="text-[#041B3C] font-semibold text-[16px]">
+                Hierarchy Design
+              </h4>
+              <p className="text-[12px] font-normal text-[#434654] text-left">
+                Link individual tasks to parent epics for a consolidated view.
+              </p>
+            </div>
+            <div className="bg-[#F1F3FF] rounded-lg flex flex-col justify-start p-5 items-start gap-3 w-52">
+              <div className="bg-white rounded-sm p-2 w-10">
+                <EmptyEpicContent variant="third" />
+              </div>
+              <h4 className="text-[#041B3C] font-semibold text-[16px]">
+                Track Velocity
+              </h4>
+              <p className="text-[12px] font-normal text-[#434654] text-left">
+                Visualize percentage completion at a macro project level.
+              </p>
+            </div>
+          </div>
+        </EmptyContent>
+      )}
       {error && (
         <ErrorContent
           title="Something went wrong"

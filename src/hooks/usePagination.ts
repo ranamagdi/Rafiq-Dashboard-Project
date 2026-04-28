@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { ApiError } from "../types/apiTypes";
+
 const LIMIT = 10;
 
 function getValidPage(param: string | null): number | null {
@@ -13,15 +14,12 @@ interface UsePaginationOptions<T> {
   fetchFn: (
     limit: number,
     offset: number,
-  ) => Promise<{
-    data: T[];
-    total: number;
-  }>;
+    searchTerm: string,
+  ) => Promise<{ data: T[]; total: number }>;
   limit?: number;
 }
 
 interface UsePaginationReturn<T> {
-  // State
   items: T[];
   loading: boolean;
   error: Error | null;
@@ -30,22 +28,16 @@ interface UsePaginationReturn<T> {
   hasMore: boolean;
   isInvalidPage: boolean;
   isOutOfRange: boolean;
-
-  // Pagination actions
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
   goToPage: (pageNum: number) => void;
   handlePreviousPage: () => void;
   handleNextPage: () => void;
   handlePageClick: (pageNum: number) => void;
   getVisiblePages: () => (number | "...")[];
-
-  // Mobile infinite scroll
   lastElementRef: (node: HTMLDivElement | null) => void;
-
-  // Manual state setters
   setItems: React.Dispatch<React.SetStateAction<T[]>>;
   setError: React.Dispatch<React.SetStateAction<Error | null>>;
-
-  // Re-fetch current page
   refresh: () => void;
 }
 
@@ -58,24 +50,32 @@ export function usePagination<T>({
   const validatedPage = getValidPage(rawPage);
   const isInvalidPage = rawPage !== null && validatedPage === null;
   const currentPage = validatedPage ?? 1;
+
   const [isOutOfRange, setIsOutOfRange] = useState(false);
   const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [totalItems, setTotalItems] = useState(0);
+  const [searchTerm, setSearchTermState] = useState("");
 
+  const searchTermRef = useRef("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const observer = useRef<IntersectionObserver | null>(null);
   const hasMountedRef = useRef(false);
 
   const fetchPage = useCallback(
-    async (pageNum: number, shouldAppend: boolean) => {
+    async (
+      pageNum: number,
+      shouldAppend: boolean,
+      term = searchTermRef.current,
+    ) => {
       setLoading(true);
       setError(null);
       setIsOutOfRange(false);
       try {
         const offset = (pageNum - 1) * limit;
-        const { data, total } = await fetchFn(limit, offset);
+        const { data, total } = await fetchFn(limit, offset, term);
 
         setHasMore(offset + data.length < total);
 
@@ -109,16 +109,29 @@ export function usePagination<T>({
     },
     [fetchFn, limit],
   );
+
+  const setSearchTerm = useCallback(
+    (term: string) => {
+      setSearchTermState(term);
+      searchTermRef.current = term;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        setSearchParams({ page: "1" });
+        fetchPage(1, false, term);
+      }, 400);
+    },
+    [fetchPage, setSearchParams],
+  );
+
   useEffect(() => {
     if (rawPage === null) {
       setSearchParams({ page: "1" }, { replace: true });
     }
   }, [rawPage, setSearchParams]);
-  // Initial mount fetch
+
   useEffect(() => {
     if (hasMountedRef.current) return;
     hasMountedRef.current = true;
-
     if (!isInvalidPage) {
       setTimeout(() => {
         fetchPage(currentPage, false);
@@ -128,6 +141,8 @@ export function usePagination<T>({
 
   const goToPage = useCallback(
     (pageNum: number) => {
+      setSearchTermState("");
+      searchTermRef.current = ""; 
       setSearchParams({ page: String(pageNum) });
       fetchPage(pageNum, false);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -175,13 +190,11 @@ export function usePagination<T>({
     (node: HTMLDivElement | null) => {
       if (loading || !node) return;
       observer.current?.disconnect();
-
       observer.current = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && hasMore) {
           fetchPage(currentPage + 1, true);
         }
       });
-
       observer.current.observe(node);
     },
     [loading, hasMore, currentPage, fetchPage],
@@ -200,6 +213,8 @@ export function usePagination<T>({
     hasMore,
     isInvalidPage,
     isOutOfRange,
+    searchTerm,
+    setSearchTerm,
     goToPage,
     handlePreviousPage,
     handleNextPage,
