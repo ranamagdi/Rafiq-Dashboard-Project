@@ -19,7 +19,7 @@ const epicSchema = z.object({
     .string()
     .max(500, "Description must be at most 500 characters")
     .optional(),
-  assignee: z.string().optional(),
+    assignee: z.string().nullable().optional(),
   deadline: z
     .string()
     .optional()
@@ -83,7 +83,7 @@ export default function CreateEpic() {
       await createEpic({
         title: data.title,
         description: data.description,
-        assignee_id: data.assignee,
+        assignee_id: data.assignee||null,
         deadline: data.deadline,
         project_id: projectId,
       });

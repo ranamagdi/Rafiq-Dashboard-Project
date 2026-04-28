@@ -1,104 +1,26 @@
-import { formatDate } from "../utils/dateUtils";
-import { useEffect, useRef, useState } from "react";
-import type { StatusVariant } from "../../types/apiTypes";
-import { getInitials } from "../utils/nameUtils";
-import { getProjectEpic } from "../../services/endpoints";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { getProjectEpic, getProjectMembers } from "../../services/endpoints";
 import Button from "../ui/Button";
+import Input from "../ui/Input";
+import type {
+  Member,
+  Epic,
+  EpicCardProps,
+} from "../../types/apiTypes";
 import useIsMobile from "../../hooks/useIsMobile";
+import { updateEpic } from "../../services/endpoints";
+import EpicDateRow from "./EpicDateRow";
+import EpicInfoRow from "./EpicInfoRow";
+import { zodResolver } from "@hookform/resolvers/zod";
+import z from "zod";
+import { useForm } from "react-hook-form";
 import {
-  CalendarIcon,
   PlusIcon,
   TasksEmptyIcon,
   CloseIcon,
   EpicDetailsIcon,
+  PenEditIcon,
 } from "../ui/SvgIcons";
-type Task = {
-  id: string;
-  title: string;
-  status?: string;
-};
-
-type EpicData = {
-  title?: string;
-  created_at?: string;
-  deadline?: string;
-  created_by?: { name?: string };
-  assignee?: { name?: string; avatar?: string };
-};
-
-type EpicCardProps = {
-  id: string;
-  title?: string;
-  description?: string;
-  createdAt?: string;
-  projectId?: string;
-  epicId?: string;
-  assigneeName?: string;
-  assigneeAvatar?: string;
-  status?: StatusVariant;
-  createdBy?: string;
-  createdByAvatar?: string;
-  deadline?: string;
-  tasks?: Task[];
-  className?: string;
-  isOpen?: boolean;
-  onClose?: () => void;
-  onAddTask?: () => void;
-};
-
-function MetaColumn({
-  label,
-  name,
-  color,
-  bgColor,
-}: {
-  label: string;
-  name?: string;
-  color?: string;
-  bgColor?: string;
-}) {
-  const initials = getInitials(name ?? "");
-
-  return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF]">
-        {label}
-      </span>
-
-      <div className="flex items-center gap-2">
-        <div
-          className="w-7 h-7 text-[10px] rounded-xl flex items-center justify-center font-bold shrink-0"
-          style={{
-            backgroundColor: bgColor ?? "#CDDDFF",
-            color: color ?? "#51617E",
-          }}
-        >
-          {initials}
-        </div>
-
-        <span className="text-[14px] font-medium text-[#041B3C]">
-          {name ?? "—"}
-        </span>
-      </div>
-    </div>
-  );
-}
-function DateColumn({ label, date }: { label: string; date?: string }) {
-  const isMobile = useIsMobile();
-  return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF]">
-        {label}
-      </span>
-      <div className="flex items-center gap-1.5 mt-0.5">
-        <CalendarIcon color={isMobile ? "var(--color-primary)" : "#9CA3AF"} />
-        <span className="text-[14px] font-medium text-[#041B3C]">
-          {date ? formatDate(date) : "—"}
-        </span>
-      </div>
-    </div>
-  );
-}
 
 export default function EpicDetailsPopup({
   title,
@@ -109,42 +31,138 @@ export default function EpicDetailsPopup({
   id,
   assigneeName,
   createdBy,
+  deadline,
   tasks = [],
   isOpen = true,
   onClose,
   onAddTask,
 }: EpicCardProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
-  const [epic, setEpic] = useState<EpicData | null>(null);
-  const [loading, setLoading] = useState(false);
   const isMobile = useIsMobile();
+
+  // ── Remote data ──
+  const [epic, setEpic] = useState<Epic | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [members, setMembers] = useState<Member[]>([]);
+
+  // ── Fetch error & retry ──
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+
+  // ── Local editable state (initialised from props) ──
+  const [localTitle, setLocalTitle] = useState(title ?? "");
+  const [localDescription, setLocalDescription] = useState(description ?? "");
+  const [localDeadline, setLocalDeadline] = useState<string | null>(
+    deadline ?? null,
+  );
+  const [localAssigneeName, setLocalAssigneeName] = useState(
+    assigneeName ?? null,
+  );
+
+  // ── Saving indicator ──
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // ── Edit mode flags ──
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [editingDescription, setEditingDescription] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const descTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // ── Schema ──
+  const epicSchema = z.object({
+    title: z
+      .string()
+      .nonempty("Title is required")
+      .min(3, "Title must be at least 3 characters"),
+    description: z
+      .string()
+      .max(500, "Description must be at most 500 characters")
+      .optional(),
+    assignee: z.string().nullable().optional(),
+    deadline: z
+      .string()
+      .optional()
+      .refine((value) => {
+        if (!value) return true;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const selected = new Date(value);
+        return selected >= today;
+      }, "Deadline must be today or a future date"),
+  });
+
+  type EpicFormValues = z.infer<typeof epicSchema>;
+
+  // ── Editable guard: disable all editing while loading or on fetch error ──
+  const isEditable = !loading && !fetchError;
+
+  // ── Skeleton class helper ──
+  const skeletonClass =
+    "bg-(--color-surface-highest) animate-pulse rounded";
+
+  // ── Fetch epic ──
   useEffect(() => {
     if (!id || !projectId) return;
-
     let cancelled = false;
 
     const fetchEpic = async () => {
       setLoading(true);
+      setFetchError(null);
       try {
         const res = await getProjectEpic(projectId, id);
         if (!cancelled) {
-          const data = (res as { data?: EpicData | EpicData[] })?.data ?? res;
-          setEpic(Array.isArray(data) ? data[0] : (data as EpicData));
+          const data = (res as { data?: Epic | Epic[] })?.data ?? res;
+          const epicData: Epic = Array.isArray(data)
+            ? data[0]
+            : (data as Epic);
+          setEpic(epicData);
+          setLocalTitle(epicData.title ?? title ?? "");
+          setLocalDescription(epicData.description ?? description ?? "");
+          setLocalDeadline(epicData.deadline ?? deadline ?? null);
+          setLocalAssigneeName(epicData.assignee_name ?? assigneeName ?? "");
         }
       } catch (err) {
         console.error("Failed to fetch epic", err);
+        if (!cancelled) {
+          // ✅ Fallback to original props on error
+          setLocalTitle(title ?? "");
+          setLocalDescription(description ?? "");
+          setLocalDeadline(deadline ?? null);
+          setLocalAssigneeName(assigneeName ?? null);
+          setFetchError(
+            "Failed to load epic details. Showing last known values.",
+          );
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
 
     fetchEpic();
-
     return () => {
       cancelled = true;
     };
-  }, [id, projectId]);
+  }, [assigneeName, deadline, description, id, projectId, title, retryCount]);
 
+  // ── Fetch members ──
+  useEffect(() => {
+    if (!projectId) return;
+
+    const fetchMembers = async () => {
+      try {
+        const res = await getProjectMembers(projectId);
+        const data: Member[] = res.data as Member[];
+        setMembers(data || []);
+      } catch (err) {
+        console.error("Failed to fetch members", err);
+      }
+    };
+
+    fetchMembers();
+  }, [projectId]);
+
+  // ── Escape key ──
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose?.();
@@ -153,18 +171,84 @@ export default function EpicDetailsPopup({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
+  // ── Focus helpers ──
+  useEffect(() => {
+    if (editingTitle) titleInputRef.current?.focus();
+  }, [editingTitle]);
+
+  useEffect(() => {
+    if (editingDescription) descTextareaRef.current?.focus();
+  }, [editingDescription]);
+
+  // ── Generic patch helper ──
+  const patch = useCallback(
+    async (payload: Record<string, unknown>) => {
+      if (!id || !projectId) return;
+      setSaving(true);
+      setSaveError(null);
+      try {
+        await updateEpic(id, payload);
+        setEpic((prev) => (prev ? { ...prev, ...payload } : prev));
+      } catch (err) {
+        console.error("Failed to update epic", err);
+        setSaveError("Failed to save. Please try again.");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [id, projectId],
+  );
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    clearErrors,
+    formState: { errors },
+  } = useForm<EpicFormValues>({
+    resolver: zodResolver(epicSchema),
+    defaultValues: { title: localTitle },
+  });
+
+  useEffect(() => {
+    setValue("title", localTitle);
+  }, [localTitle, setValue]);
+
+  // ── Field save handlers ──
+  const saveTitle = async () => {
+    await handleSubmit(
+      (data) => {
+        setEditingTitle(false);
+        if (data.title !== (epic?.title ?? title)) patch({ title: data.title });
+        setLocalTitle(data.title);
+      },
+      () => {
+        titleInputRef.current?.focus();
+      },
+    )();
+  };
+
+  const saveDescription = () => {
+    setEditingDescription(false);
+    if (localDescription !== (epic?.description ?? description ?? ""))
+      patch({ description: localDescription });
+  };
+
+  const saveAssignee = (memberId: string | null) => {
+    const member = members.find((m) => m.member_id === memberId) ?? null;
+    setLocalAssigneeName(member?.metadata.name ?? "");
+    patch({ assignee_id: memberId });
+  };
+
+  const saveDeadline = (val: string | null) => {
+    setLocalDeadline(val);
+    patch({ deadline: val });
+  };
+
   if (!isOpen) return null;
 
-  const displayTitle = loading ? "Loading..." : (epic?.title ?? title);
-  const displayCreatedBy = loading
-    ? "Loading..."
-    : (epic?.created_by?.name ?? createdBy);
-  const displayAssigneeName = loading
-    ? "Loading..."
-    : (epic?.assignee?.name ?? assigneeName);
-  const displayCreatedAt = loading
-    ? "Loading..."
-    : (epic?.created_at ?? createdAt);
+  const displayCreatedBy = epic?.created_by?.name ?? createdBy;
+  const displayCreatedAt = epic?.created_at ?? createdAt;
 
   return (
     <div
@@ -178,15 +262,10 @@ export default function EpicDetailsPopup({
         if (e.target === overlayRef.current) onClose?.();
       }}
     >
-      <div
-        className={`
-          relative bg-white rounded-2xl shadow-[0_24px_64px_rgba(4,27,60,0.18)]
-          w-full max-w-145 mx-4 flex flex-col overflow-hidden
-          animate-[fadeSlideUp_0.22s_ease-out]
-         
-        `}
-      >
-        <div className="bg-[#F1F3FF] sm:bg-transparent rounded-t-2xl">
+      <div className="relative bg-white rounded-2xl shadow-[0_24px_64px_rgba(4,27,60,0.18)] w-full max-w-145 mx-4 flex flex-col overflow-hidden animate-[fadeSlideUp_0.22s_ease-out]">
+
+        {/* ── Header ── */}
+        <div className="bg-(--color-surface-low) sm:bg-transparent rounded-t-2xl">
           <div className="px-7 pt-6 pb-4">
             <div className="flex items-center justify-between mb-3">
               {epicId && (
@@ -198,50 +277,180 @@ export default function EpicDetailsPopup({
                 </div>
               )}
 
-              <button
-                onClick={onClose}
-                className="ml-auto p-1.5 rounded-lg hover:bg-[#F3F4F6] transition-colors"
-              >
-                <CloseIcon />
-              </button>
+              <div className="ml-auto flex items-center gap-2">
+                {saving && (
+                  <span className="text-[11px] text-[#9CA3AF] animate-pulse">
+                    Saving…
+                  </span>
+                )}
+                {saveError && (
+                  <span className="text-[13px] text-red-500">{saveError}</span>
+                )}
+                <button
+                  onClick={onClose}
+                  className="p-1.5 rounded-lg hover:bg-(--color-hover) transition-colors"
+                >
+                  <CloseIcon />
+                </button>
+              </div>
             </div>
 
-            {title && (
-              <h2 className="text-[22px] uppercase font-bold text-[#041B3C] leading-tight tracking-tight">
-                {displayTitle}
+            {/* ── Title ── */}
+            {editingTitle && isEditable ? (
+              <div className="flex flex-col gap-1">
+                <Input
+                  {...register("title")}
+                  ref={(e) => {
+                    register("title").ref(e);
+                    (
+                      titleInputRef as React.RefObject<HTMLInputElement | null>
+                    ).current = e;
+                  }}
+                  value={localTitle}
+                  onChange={(e) => {
+                    setLocalTitle(e.target.value);
+                    setValue("title", e.target.value, { shouldValidate: true });
+                  }}
+                  onBlur={saveTitle}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") saveTitle();
+                    if (e.key === "Escape") {
+                      setLocalTitle(epic?.title ?? title ?? "");
+                      setValue("title", epic?.title ?? title ?? "");
+                      clearErrors("title");
+                      setEditingTitle(false);
+                    }
+                  }}
+                />
+                {errors.title && (
+                  <span className="text-[11px] text-red-500 px-1">
+                    {errors.title.message}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <h2
+                onClick={() => isEditable && setEditingTitle(true)}
+                title={isEditable ? "Click to edit title" : undefined}
+                className={`text-[22px] uppercase font-bold text-(--color-slate-dark-blue) leading-tight tracking-tight group flex items-center gap-2 transition-colors
+                  ${
+                    isEditable
+                      ? "cursor-pointer hover:text-(--color-primary)"
+                      : "cursor-not-allowed opacity-60"
+                  }`}
+              >
+                {loading ? (
+                  <span className={`${skeletonClass} w-48 h-6 `} />
+                ) : (
+                  localTitle || "—"
+                )}
+                {isEditable && <PenEditIcon />}
               </h2>
             )}
           </div>
         </div>
 
-        <div className="px-7 pb-5">
-          <hr className="hidden sm:block border-[#E5E7EB] my-5" />
+        {/* ── Fetch Error Banner ── */}
+        {fetchError && (
+          <div className="mx-7 mb-2 px-4 py-3 rounded-lg bg-red-50 border border-red-200 flex items-center justify-between gap-3">
+            <span className="text-[12px] text-red-600">{fetchError}</span>
+            <button
+              onClick={() => {
+                setFetchError(null);
+                setRetryCount((c) => c + 1);
+              }}
+              className="shrink-0 text-[12px] font-semibold text-red-600 border border-red-300 rounded-md px-3 py-1.5 hover:bg-red-100 transition-colors whitespace-nowrap"
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
-          <h3 className="block md:hidden font-bold text-[11px] mt-4 text-[#4F5F7B]">
+        {/* ── Description ── */}
+        <div className="px-7 pb-5">
+          <hr className="hidden sm:block border-[#E5E7EB] my-2" />
+
+          <h3 className="block md:hidden font-bold text-(--label-speical-size,--color-slate-medium-blue) mt-4 ">
             Description
           </h3>
 
-          <p className="mt-3 text-[16px] text-[#041B3CCC] leading-relaxed">
-            {description || "No description provided for this epic."}
-          </p>
+          {editingDescription && isEditable ? (
+            <textarea
+              ref={descTextareaRef}
+              value={localDescription}
+              onChange={(e) => setLocalDescription(e.target.value)}
+              onBlur={saveDescription}
+              rows={3}
+              placeholder="No description provided for this epic."
+              className="px-4 py-3 pb-8 resize-none w-full rounded-sm outline-none border-none pr-10 pl-4 bg-(--color-surface-highest) text-sm"
+            />
+          ) : loading ? (
+            <div className="mt-3 flex flex-col gap-2 ">
+              <span className={`${skeletonClass} w-full h-3 block`} />
+              <span className={`${skeletonClass} w-3/4 h-3 block`} />
+              <span className={`${skeletonClass} w-1/2 h-3 block`} />
+            </div>
+          ) : (
+            <p
+              onClick={() => isEditable && setEditingDescription(true)}
+              title={isEditable ? "Click to edit description" : undefined}
+              className={`mt-3  text-(--color-slate-dark-blue)/80 leading-relaxed gap-1 flex items-center group relative transition-colors
+                ${
+                  isEditable
+                    ? "cursor-pointer"
+                    : "cursor-not-allowed opacity-60 pointer-events-none"
+                }`}
+            >
+              <span className="group-hover:bg-(--color-surface-low) rounded-md px-1 -mx-1 transition-colors">
+                {localDescription || "No description provided for this epic."}
+              </span>
+              {isEditable && <PenEditIcon className="mt-1" />}
+            </p>
+          )}
         </div>
 
-        <div className="px-7 py-5 flex justify-between items-center gap-8 flex-wrap">
-          <MetaColumn
+        {/* ── Info Rows ── */}
+        <div className="px-7 py-1 flex justify-between items-center gap-8 flex-wrap">
+          <EpicInfoRow
             label="Created By"
-            name={displayCreatedBy}
+            name={
+              loading ? undefined : displayCreatedBy
+            }
+            loading={loading}
             color="white"
             bgColor="var(--color-primary)"
           />
-          <MetaColumn label="Assignee" name={displayAssigneeName} />
 
-          <DateColumn label="Created At" date={displayCreatedAt} />
+          <EpicInfoRow
+            label="Assignee"
+            name={localAssigneeName || undefined}
+            loading={loading}
+            editable={isEditable}
+            members={members}
+            onSelect={saveAssignee}
+          />
+
+          <EpicDateRow
+            label="Created At"
+            date={loading ? undefined : displayCreatedAt}
+            loading={loading}
+          />
+
+          <EpicDateRow
+            label="Deadline"
+            date={localDeadline ?? undefined}
+            loading={loading}
+            editable={isEditable}
+            onDateChange={saveDeadline}
+          />
         </div>
 
-        <div className="px-7 py-5">
-          <div className="flex items-center mb-4 ">
-            <h3 className="text-[15px] font-bold text-[#041B3C]">Tasks</h3>
-
+        {/* ── Tasks Section ── */}
+        <div className="px-7 py-2">
+          <div className="flex items-center mb-1">
+            <h3 className="text-[15px] font-bold text-(--color-slate-dark-blue)">
+              Tasks
+            </h3>
             <Button
               onClick={onAddTask}
               variant="text"
@@ -260,10 +469,10 @@ export default function EpicDetailsPopup({
                 border: "2px dashed #C7D2E8",
               }}
             >
-              <div className="w-14 h-14 bg-[#D7E2FF] rounded-2xl flex items-center justify-center mb-2">
+              <div className="w-14 h-14 bg-(--color-surface-highest) rounded-2xl flex items-center justify-center mb-2">
                 <TasksEmptyIcon opacity={!isMobile ? "0.3" : "1"} />
               </div>
-              <p className=" px-4 text-center sm:px-0  text-[16px] sm:text-[#041B3C] text-[#4F5F7B] font-medium">
+              <p className="px-4 text-center sm:px-0 text-[16px] sm:text-(--color-slate-dark-blue) text-(--color-slate-medium-blue) font-medium">
                 No tasks have been added to this epic yet
               </p>
               <Button onClick={onAddTask} className="gap-2 mt-2">
@@ -276,13 +485,13 @@ export default function EpicDetailsPopup({
               {tasks.map((task) => (
                 <li
                   key={task.id}
-                  className="flex items-center justify-between px-4 py-3 rounded-xl border border-[#E5E7EB] hover:border-[#1A56DB]/30 hover:bg-[#F8FAFF] transition-all duration-150"
+                  className="flex items-center justify-between px-4 py-3 rounded-xl border border-(--color-hover) hover:border-(--color-primary)/30 hover:bg-(--color-hover) transition-all duration-150"
                 >
-                  <span className="text-[13px] font-medium text-[#041B3C]">
+                  <span className="text-[var(--label-speical-size),var(--color-primary)] font-medium">
                     {task.title}
                   </span>
                   {task.status && (
-                    <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#DBEAFE] text-[#1D4ED8]">
+                    <span className="text-[var(--label-sm-size),var(--color-primary)] font-semibold px-2.5 py-0.5 rounded-full bg-(--color-text)">
                       {task.status}
                     </span>
                   )}
