@@ -63,12 +63,11 @@ export default function Epics() {
     setEpics((prev) => prev.filter((epic) => epic.id !== id));
   };
 
-  const handleClosePopup=()=>{
+  const handleClosePopup = () => {
     setSelectedEpic(null);
-    goToPage(1)
-    
-  }
-  if (isInvalidPage ||isOutOfRange) {
+    goToPage(1);
+  };
+  if (isInvalidPage || isOutOfRange) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-9">
         <EmptyContent
@@ -84,7 +83,6 @@ export default function Epics() {
             onClick={() => goToPage(1)}
           >
             Go to Page 1
-         
           </Button>
           <div className="flex justify-between align-middle items-center mt-10 w-[70%]">
             <div className="bg-[#F1F3FF] rounded-lg flex flex-col justify-start p-5 items-start gap-3 w-52">
@@ -129,7 +127,7 @@ export default function Epics() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
       {!error && (epics.length !== 0 || loading) && (
         <>
-         <Breadcrumb/>
+          <Breadcrumb />
           <>
             <div className="grid grid-cols-12 items-center">
               <div className="col-span-12 md:col-span-8">
@@ -248,6 +246,11 @@ export default function Epics() {
           createdBy={selectedEpic?.created_by.name}
           deadline={selectedEpic?.deadline}
           isOpen={true}
+          onAddTask={() =>
+            navigate(
+              `/dashboard/project/${projectId}/${selectedEpic.id}/tasks/new`,
+            )
+          }
           onClose={() => handleClosePopup()}
         />
       )}

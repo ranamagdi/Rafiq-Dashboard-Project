@@ -59,7 +59,7 @@ type TaskFormValues = z.infer<typeof tasksSchema>;
 
 export default function CreateTask() {
   const navigate = useNavigate();
-  const { projectId } = useParams();
+  const { projectId,epicId } = useParams();
   const [members, setMembers] = useState<Member[]>([]);
   const [epics, setEpics] = useState<Epic[]>([]);
   const STATUS_OPTIONS: StatusVariant[] = [
@@ -83,6 +83,7 @@ export default function CreateTask() {
     resolver: zodResolver(tasksSchema),
     defaultValues: {
       status: "TO_DO",
+       epic_id: epicId || "", 
     },
   });
 
@@ -113,22 +114,30 @@ export default function CreateTask() {
     fetchMembers();
   }, [projectId]);
 
-  useEffect(() => {
-    if (!projectId) return;
+ useEffect(() => {
+  if (!projectId) return;
 
-    const fetchEpics = async () => {
-      try {
-        const res = await getProjectEpic(projectId);
-        const data: Epic[] = res.data as Epic[];
+  const fetchEpics = async () => {
+    try {
+      const res = await getProjectEpic(projectId, epicId);
+      const data: Epic[] = res.data as Epic[];
 
-        setEpics(data || []);
-      } catch (err) {
-        console.error("Failed to fetch epics", err);
+      setEpics(data || []);
+
+   
+      if (epicId) {
+        reset((prev) => ({
+          ...prev,
+          epic_id: epicId,
+        }));
       }
-    };
+    } catch (err) {
+      console.error("Failed to fetch epics", err);
+    }
+  };
 
-    fetchEpics();
-  }, [projectId]);
+  fetchEpics();
+}, [projectId, epicId, reset]);
   const handleSubmitForm: SubmitHandler<TaskFormValues> = async (data) => {
     try {
       await createTask({
@@ -304,15 +313,18 @@ export default function CreateTask() {
             <div className="relative mt-2">
               <select
                 {...register("epic_id")}
-                defaultValue=""
-                className="w-full appearance-none bg-(--color-surface-highest) rounded-sm px-4 py-2.5 text-sm outline-none border-none"
+         
+                className="w-full appearance-none  bg-(--color-surface-highest) rounded-sm px-4 py-2.5 text-sm outline-none border-none"
               >
                 <option value="">Select Epic Link</option>
 
                 {epics.map((epic) => (
-                  <option key={epic.id} value={epic.id}>
-                    {epic.title}
-                  </option>
+                 <option key={epic.id} value={epic.id} >
+                ({epic.id}){" "}
+                {epic.title.length > 100
+                    ? epic.title.slice(0, 100) + "..."
+                    : epic.title}
+                </option>
                 ))}
               </select>
 

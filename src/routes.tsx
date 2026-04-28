@@ -34,7 +34,7 @@ const AppRoutes = () => {
           <Route path="project/:projectId/epics" element={<Epics />} />
           <Route path="project/:projectId/epic/add" element={<EpicCreate />} />
           <Route path="project/:projectId/members" element={<Members />} />
-          <Route path="project/:projectId/tasks/new" element={<TaskCreate />} />
+          <Route path="project/:projectId/:epicId?/tasks/new" element={<TaskCreate />} />
            <Route path="project/:projectId/tasks/" element={<Tasks />} />
         </Route>
       </Route>
