@@ -18,15 +18,16 @@ export interface Epic {
   assignee_avatar?: string 
 }
 
-export type StatusVariant = "TO_DO" | "IN_PROGRESS" | "DONE";
+export type StatusVariant = "TO_DO" | "IN_PROGRESS" | "DONE"| "BLOCKED"| "IN_REVIEW"| "READY_FOR_QA"| "REOPENED"| "READY_FOR_PRODUCTION";
+
 
 export interface Task {
   id?: string;
   project_id: string;
-  epic_id?: string;
+  epic_id?:string | null;
   title: string;
   description?: string;
-  assignee_id?: string;
+  assignee_id?: string | null;
   due_date?: string;
   status: StatusVariant;
 }

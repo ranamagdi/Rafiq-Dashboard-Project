@@ -77,10 +77,14 @@ export const getProjectEpics = (projectId: string, limit: number, offset: number
     headers:{ Prefer: "count=exact" },
   });
 };
-export const getProjectEpic = (projectId: string,id:string) => {
-  return api.get(`/rest/v1/project_epics?project_id=eq.${projectId}&id=eq.${id}`, {
-  
-  });
+export const getProjectEpic = (projectId: string, id?: string) => {
+  let url = `/rest/v1/project_epics?project_id=eq.${projectId}`;
+
+  if (id) {
+    url += `&id=eq.${id}`;
+  }
+
+  return api.get(url);
 };
 export const getProjectEpicsSearch = (projectId: string, searchTerm: string) => {
   return api.get(`/rest/v1/project_epics?project_id=eq.${projectId}&title=ilike.%25${(searchTerm)}%25`);

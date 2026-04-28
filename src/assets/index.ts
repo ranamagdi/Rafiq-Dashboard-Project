@@ -23,6 +23,7 @@ import backArrow from "./icons/back-arrow.svg";
 import lockForgot from "./icons/lock-forgot.svg";
 import clock from "./icons/clock.svg";
 import search from "./icons/search.svg";
+import calender from './icons/calender.svg'
 import error from './icons/error.svg'
 import filledIconCheck from "./icons/filled-iconcheck.svg"
 
@@ -36,6 +37,7 @@ export const ICONS = {
   dashboard,
   settings,
   description,
+  calender,
   events,
   groups,
   hub,

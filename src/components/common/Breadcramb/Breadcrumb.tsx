@@ -52,10 +52,10 @@ export default function Breadcrumb() {
 
             <NavLink
               to={to}
-              className={({ isActive }) =>
-                isActive || isLast
+              className={() =>
+                 isLast
                   ? "text-(--color-primary) font-bold uppercase  text-[12px]"
-                  : "text-(--color-forms-texts) font-bold uppercase hover:text-(--color-primary)  text-[12px']"
+                  : "text-(--color-forms-texts) font-semibold uppercase hover:text-(--color-primary)  text-[12px]"
               }
             >
               {label}
