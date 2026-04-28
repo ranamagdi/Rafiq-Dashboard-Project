@@ -22,14 +22,26 @@ export type StatusVariant = "TO_DO" | "IN_PROGRESS" | "DONE"| "BLOCKED"| "IN_REV
 
 
 export interface Task {
-  id?: string;
+  id: string;
   project_id: string;
-  epic_id?:string | null;
+  epic_id?: string | null;
   title: string;
   description?: string;
-  assignee_id?: string | null;
   due_date?: string;
   status: StatusVariant;
+
+  task_id?: string;
+
+  assignee?: {
+    id: string;
+    name: string;
+    email?: string;
+  };
+
+  created_by?: {
+    id: string;
+    name: string;
+  };
 }
 export type ApiMember = {
   member_id: string;

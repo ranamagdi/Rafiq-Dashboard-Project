@@ -121,7 +121,7 @@ export const getProjectTasks = (projectId: string) => {
 };
 
 export const getEpicTasks = (epicId: string) => {
-  return api.get(`/rest/v1/project_tasks?epic_id=eq.${epicId}`);
+  return api.get<Task[]>(`/rest/v1/tasks?epic_id=eq.${epicId}`);
 };
 
 export const getProjectMembers = (projectId: string) => {

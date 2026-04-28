@@ -1,13 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { getProjectEpic, getProjectMembers } from "../../services/endpoints";
-import Button from "../ui/Button";
+import EpicTasksSection from "./EpicTasksSection";
 import Input from "../ui/Input";
-import type {
-  Member,
-  Epic,
-  EpicCardProps,
-} from "../../types/apiTypes";
-import useIsMobile from "../../hooks/useIsMobile";
+import type { Member, Epic, EpicCardProps } from "../../types/apiTypes";
 import { updateEpic } from "../../services/endpoints";
 import EpicDateRow from "./EpicDateRow";
 import EpicInfoRow from "./EpicInfoRow";
@@ -15,9 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import { useForm } from "react-hook-form";
 import {
-  PlusIcon,
-  TasksEmptyIcon,
-  CloseIcon,
+   CloseIcon,
   EpicDetailsIcon,
   PenEditIcon,
 } from "../ui/SvgIcons";
@@ -31,14 +24,13 @@ export default function EpicDetailsPopup({
   id,
   assigneeName,
   createdBy,
-  deadline,
-  tasks = [],
+  deadline, 
   isOpen = true,
   onClose,
   onAddTask,
 }: EpicCardProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
-  const isMobile = useIsMobile();
+
 
   // ── Remote data ──
   const [epic, setEpic] = useState<Epic | null>(null);
@@ -98,8 +90,7 @@ export default function EpicDetailsPopup({
   const isEditable = !loading && !fetchError;
 
   // ── Skeleton class helper ──
-  const skeletonClass =
-    "bg-(--color-surface-highest) animate-pulse rounded";
+  const skeletonClass = "bg-(--color-surface-highest) animate-pulse rounded";
 
   // ── Fetch epic ──
   useEffect(() => {
@@ -113,9 +104,7 @@ export default function EpicDetailsPopup({
         const res = await getProjectEpic(projectId, id);
         if (!cancelled) {
           const data = (res as { data?: Epic | Epic[] })?.data ?? res;
-          const epicData: Epic = Array.isArray(data)
-            ? data[0]
-            : (data as Epic);
+          const epicData: Epic = Array.isArray(data) ? data[0] : (data as Epic);
           setEpic(epicData);
           setLocalTitle(epicData.title ?? title ?? "");
           setLocalDescription(epicData.description ?? description ?? "");
@@ -125,7 +114,7 @@ export default function EpicDetailsPopup({
       } catch (err) {
         console.error("Failed to fetch epic", err);
         if (!cancelled) {
-          // ✅ Fallback to original props on error
+      
           setLocalTitle(title ?? "");
           setLocalDescription(description ?? "");
           setLocalDeadline(deadline ?? null);
@@ -263,7 +252,6 @@ export default function EpicDetailsPopup({
       }}
     >
       <div className="relative bg-white rounded-2xl shadow-[0_24px_64px_rgba(4,27,60,0.18)] w-full max-w-145 mx-4 flex flex-col overflow-hidden animate-[fadeSlideUp_0.22s_ease-out]">
-
         {/* ── Header ── */}
         <div className="bg-(--color-surface-low) sm:bg-transparent rounded-t-2xl">
           <div className="px-7 pt-6 pb-4">
@@ -413,9 +401,7 @@ export default function EpicDetailsPopup({
         <div className="px-7 py-1 flex justify-between items-center gap-8 flex-wrap">
           <EpicInfoRow
             label="Created By"
-            name={
-              loading ? undefined : displayCreatedBy
-            }
+            name={loading ? undefined : displayCreatedBy}
             loading={loading}
             color="white"
             bgColor="var(--color-primary)"
@@ -446,60 +432,7 @@ export default function EpicDetailsPopup({
         </div>
 
         {/* ── Tasks Section ── */}
-        <div className="px-7 py-2">
-          <div className="flex items-center mb-1">
-            <h3 className="text-[15px] font-bold text-(--color-slate-dark-blue)">
-              Tasks
-            </h3>
-            <Button
-              onClick={onAddTask}
-              variant="text"
-              className="flex items-center gap-1.5 ml-auto px-0"
-            >
-              <PlusIcon />
-              Add Task
-            </Button>
-          </div>
-
-          {tasks.length === 0 ? (
-            <div
-              className="flex flex-col items-center justify-center gap-3 py-10 rounded-lg"
-              style={{
-                background: "linear-gradient(135deg, #F0F4FF 0%, #EEF2FB 100%)",
-                border: "2px dashed #C7D2E8",
-              }}
-            >
-              <div className="w-14 h-14 bg-(--color-surface-highest) rounded-2xl flex items-center justify-center mb-2">
-                <TasksEmptyIcon opacity={!isMobile ? "0.3" : "1"} />
-              </div>
-              <p className="px-4 text-center sm:px-0 text-[16px] sm:text-(--color-slate-dark-blue) text-(--color-slate-medium-blue) font-medium">
-                No tasks have been added to this epic yet
-              </p>
-              <Button onClick={onAddTask} className="gap-2 mt-2">
-                <PlusIcon />
-                Add Task
-              </Button>
-            </div>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {tasks.map((task) => (
-                <li
-                  key={task.id}
-                  className="flex items-center justify-between px-4 py-3 rounded-xl border border-(--color-hover) hover:border-(--color-primary)/30 hover:bg-(--color-hover) transition-all duration-150"
-                >
-                  <span className="text-[var(--label-speical-size),var(--color-primary)] font-medium">
-                    {task.title}
-                  </span>
-                  {task.status && (
-                    <span className="text-[var(--label-sm-size),var(--color-primary)] font-semibold px-2.5 py-0.5 rounded-full bg-(--color-text)">
-                      {task.status}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <EpicTasksSection epicId={id} onAddTask={onAddTask} />
       </div>
     </div>
   );
