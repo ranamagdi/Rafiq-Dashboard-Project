@@ -8,18 +8,20 @@ import ResetPassword from "./pages/auth/resetpassword/reset-password";
 import AuthCallback from "./pages/auth/authcallback";
 import Dashboard from "./pages/dashboard";
 import Projects from "./pages/dashboard/projects/index";
-import ProjectOps from  "./pages/dashboard/projects/project-operations";
+import ProjectOps from "./pages/dashboard/projects/project-operations";
 import Epics from "./pages/dashboard/epics";
 import EpicCreate from "./pages/dashboard/epics/epic-create";
 import Members from "./pages/dashboard/members";
+import TaskCreate from "./pages/dashboard/tasks/task-create";
+import Tasks from './pages/dashboard/tasks/index'
 const AppRoutes = () => {
   return (
     <Routes>
       <Route element={<PublicRoute />}>
-       <Route path="/sign-up" element={<Signup />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/login" element={<Login />} />
+        <Route path="/sign-up" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/login" element={<Login />} />
       </Route>
       <Route path="/" element={<AuthCallback />} />
 
@@ -31,8 +33,9 @@ const AppRoutes = () => {
           <Route path="project/:projectId/edit" element={<ProjectOps />} />
           <Route path="project/:projectId/epics" element={<Epics />} />
           <Route path="project/:projectId/epic/add" element={<EpicCreate />} />
-            <Route path="project/:projectId/members" element={<Members />} />
-          
+          <Route path="project/:projectId/members" element={<Members />} />
+          <Route path="project/:projectId/tasks/new" element={<TaskCreate />} />
+           <Route path="project/:projectId/tasks/" element={<Tasks />} />
         </Route>
       </Route>
     </Routes>
