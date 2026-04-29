@@ -24,9 +24,11 @@ import lockForgot from "./icons/lock-forgot.svg";
 import clock from "./icons/clock.svg";
 import search from "./icons/search.svg";
 import calender from './icons/calender.svg'
+import menu from './icons/Icon.svg'
 import error from './icons/error.svg'
 import filledIconCheck from "./icons/filled-iconcheck.svg"
-
+import boardViewIcon from './icons/board-view-icon.svg'
+import listViewIcon from './icons/list-view-icon.svg'
 export const IMAGES = {
     projectEmpty,
     EpicEmpty
@@ -58,5 +60,8 @@ export const ICONS = {
   filledIconCheck,
   search,
   error,
+  menu,
+  listViewIcon,
+  boardViewIcon
 
 };

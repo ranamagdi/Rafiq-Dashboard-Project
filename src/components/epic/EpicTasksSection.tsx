@@ -117,44 +117,46 @@ export default function EpicTasksSection({ epicId, onAddTask }: Props) {
                 </li>
               ))
             : tasks.map((task) => (
-                <li
-                  key={task.id}
-                  className="flex items-center justify-between px-5 py-4 bg-white hover:bg-[#F9FAFB] transition"
-                >
-                  <div className="flex items-center gap-4">
-                    <CheckIcon />
+                <><li
+                key={task.id}
+                className="flex items-center justify-between px-5 py-4 bg-white hover:bg-[#F9FAFB] transition"
+              >
+                <div className="flex items-center gap-4">
+                  <CheckIcon />
 
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-[#041B3C]">
-                        {task.title}
-                      </span>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-[#041B3C]">
+                      {task.title}
+                    </span>
 
-                      <div className="flex items-center gap-2 mt-1 text-sm text-gray-500">
-                        <div className="w-6 h-6 rounded-xl bg-(--color-circular) flex items-center justify-center text-[8px] font-semibold text-(--color-primary)">
-                          {getInitials(task.assignee?.name || "U")}
-                        </div>
-
-                        <span>{task.assignee?.name || "Unassigned"}</span>
+                    <div className="flex items-center gap-2 mt-1 text-sm text-gray-500">
+                      <div className="w-6 h-6 rounded-xl bg-(--color-circular) flex items-center justify-center text-[8px] font-semibold text-(--color-primary)">
+                        {getInitials(task.assignee?.name || "U")}
                       </div>
+
+                      <span>{task.assignee?.name || "Unassigned"}</span>
                     </div>
                   </div>
+                </div>
 
-                  <div className="text-right text-sm">
-                    <p className="text-gray-400 uppercase text-[11px] tracking-wide">
-                      Due Date
-                    </p>
-                    <p className="font-medium text-[12px] text-(--color-date)">
-                      {task.due_date
-                        ? new Date(task.due_date).toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })
-                        : "—"}
-                    </p>
-                  </div>
-                </li>
-                
+                <div className="text-right text-sm">
+                  <p className="text-gray-400 uppercase text-[11px] tracking-wide">
+                    Due Date
+                  </p>
+                  <p className="font-medium text-[12px] text-(--color-date)">
+                    {task.due_date
+                      ? new Date(task.due_date).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })
+                      : "—"}
+                  </p>
+                </div>
+              </li><Button onClick={onAddTask} variant="text" className="flex sm:hidden gap-2 mt-2 w-full border-dashed border-2 border-[#C3C6D64D] text-(--color-button-text)">
+                  <PlusRoundedIcon />
+                  Add New Task
+                </Button></>
               ))}
               
         </ul>
@@ -162,10 +164,6 @@ export default function EpicTasksSection({ epicId, onAddTask }: Props) {
         
       )}
       
-          <Button onClick={onAddTask} variant="text" className="gap-2 mt-2 w-full border-dashed border-2 border-[#C3C6D64D] text-(--color-button-text)">
-            <PlusRoundedIcon />
-            Add New Task
-          </Button>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { api } from "./api";
-import type { Project, Epic, Task, LoginResponse, ApiUser } from "../types/apiTypes";
+import type { Project, Epic, Task, LoginResponse, ApiUser,StatusVariant } from "../types/apiTypes";
 
 // SIGN UP
 export const signUp = (data: {
@@ -116,8 +116,8 @@ export const deleteTask = (id: string) => {
   return api.delete(`/rest/v1/tasks?id=eq.${id}`);
 };
 
-export const getProjectTasks = (projectId: string) => {
-  return api.get(`/rest/v1/project_tasks?project_id=eq.${projectId}`);
+export const getProjectTasks = (projectId: string,status?:Partial<StatusVariant>) => {
+  return api.get(`/rest/v1/project_tasks?project_id=eq.${projectId}&status=${status}`);
 };
 
 export const getEpicTasks = (epicId: string) => {
