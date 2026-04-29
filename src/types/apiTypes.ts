@@ -27,7 +27,7 @@ export interface Task {
   epic_id?: string | null;
   title: string;
   description?: string;
-  due_date?: string;
+  due_date?: string | Date;
   status: StatusVariant;
 
   task_id?: string;

@@ -116,10 +116,18 @@ export const deleteTask = (id: string) => {
   return api.delete(`/rest/v1/tasks?id=eq.${id}`);
 };
 
-export const getProjectTasks = (projectId: string,status?:Partial<StatusVariant>) => {
-  return api.get(`/rest/v1/project_tasks?project_id=eq.${projectId}&status=${status}`);
-};
+export const getProjectTasks = (
+  projectId: string,
+  status?: StatusVariant
+) => {
+  let url = `/rest/v1/project_tasks?project_id=eq.${projectId}`;
 
+  if (status) {
+    url += `&status=eq.${status}`;
+  }
+
+  return api.get(url);
+};
 export const getEpicTasks = (epicId: string) => {
   return api.get<Task[]>(`/rest/v1/tasks?epic_id=eq.${epicId}`);
 };

@@ -1,11 +1,27 @@
-export const formatDate = (dateString?: string): string => {
-  if (!dateString) return "";
+type FormatDateOptions = {
+  short?: boolean 
+}
 
-  const date = new Date(dateString);
+export const formatDate = (
+  dateInput?: string | Date,
+  options: FormatDateOptions = {}
+): string => {
+  if (!dateInput) return ""
 
-  const day = date.getDate();
-  const month = date.toLocaleString("en-US", { month: "short" });
-  const year = date.getFullYear();
+  const date =
+    typeof dateInput === "string"
+      ? new Date(dateInput)
+      : dateInput
 
-  return `${day} ${month} ${year}`;
-};
+  const day = date.getDate()
+  const month = date.toLocaleString("en-US", { month: "short" })
+  const year = date.getFullYear()
+
+
+  if (options.short) {
+    return `${month} ${day}`
+  }
+
+  // 👉 Default: 12 Oct 2023
+  return `${day} ${month} ${year}`
+}
