@@ -215,6 +215,7 @@ export default function Epics() {
       {!isMobile && !loading && epics.length > 0 && (
         <Pagination
           currentPage={currentPage}
+          pageSize={10}
           totalItems={totalItems}
           hasMore={hasMore}
           itemsShown={epics.length}

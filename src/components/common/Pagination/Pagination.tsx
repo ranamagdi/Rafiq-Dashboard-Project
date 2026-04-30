@@ -6,7 +6,12 @@ interface PaginationProps {
   totalItems: number;
   hasMore: boolean;
   itemsShown: number;
-  label: string; // e.g. "projects" or "epics" or "tasks"
+
+  pageSize: number;
+  mode?: "default" | "compact";
+
+  label: string;
+
   getVisiblePages: () => (number | "...")[];
   handlePreviousPage: () => void;
   handleNextPage: () => void;
@@ -18,18 +23,27 @@ export default function Pagination({
   totalItems,
   hasMore,
   itemsShown,
+  pageSize,
+  mode = "default",
   label,
   getVisiblePages,
   handlePreviousPage,
   handleNextPage,
   handlePageClick,
 }: PaginationProps) {
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
   return (
     <div className="flex justify-between items-center">
+   
       <p className="text-(--color-forms-texts) text-[12px] font-medium">
-        Showing {itemsShown} of {totalItems} active {label}
+      
+          Showing {itemsShown} of {totalItems} active {label}
       </p>
+
+
       <div className="flex justify-center items-center gap-4 py-8">
+       
         <Button
           disabled={currentPage === 1}
           onClick={handlePreviousPage}
@@ -38,32 +52,47 @@ export default function Pagination({
           <PreviousPage />
         </Button>
 
-        <div className="flex items-center gap-2">
-          {getVisiblePages().map((p, i) =>
-            p === "..." ? (
-              <span
-                key={`ellipsis-${i}`}
-                className="h-8 w-8 flex items-center justify-center text-gray-400 text-sm select-none"
-              >
-                ...
-              </span>
-            ) : (
-              <span
-                key={p}
-                onClick={() => handlePageClick(p)}
-                className={`h-8 w-8 rounded-sm text-sm font-semibold flex items-center justify-center cursor-pointer transition-colors
-                  ${
-                    p === currentPage
-                      ? "text-white bg-(--color-primary-container)"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
-              >
-                {p}
-              </span>
-            ),
-          )}
-        </div>
 
+        {mode === "default" && (
+          <div className="flex items-center gap-2">
+            {getVisiblePages().map((p, i) =>
+              p === "..." ? (
+                <span
+                  key={`ellipsis-${i}`}
+                  className="h-8 w-8 flex items-center justify-center text-gray-400 text-sm"
+                >
+                  ...
+                </span>
+              ) : (
+                <span
+                  key={p}
+                  onClick={() => handlePageClick(p)}
+                  className={`h-8 w-8 flex items-center justify-center cursor-pointer rounded-sm text-sm font-semibold
+                    ${
+                      p === currentPage
+                        ? "text-white bg-(--color-primary-container)"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                >
+                  {p}
+                </span>
+              ),
+            )}
+          </div>
+        )}
+
+        {mode === "compact" && (
+          <button
+            onClick={() => {
+           
+            }}
+            className="h-8 px-3 text-sm font-medium text-gray-700 "
+          >
+            Page {currentPage} of {totalPages}
+          </button>
+        )}
+
+    
         <Button
           disabled={!hasMore}
           onClick={handleNextPage}

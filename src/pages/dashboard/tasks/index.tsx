@@ -68,6 +68,7 @@ export default function Tasks() {
     getVisiblePages,
     lastElementRef,
     isOutOfRange,
+    
   } = usePagination<Task>({
     fetchFn: async (limit, offset) => {
       const res = await getProjectTasks(
@@ -291,6 +292,8 @@ export default function Tasks() {
                 <Pagination
                   currentPage={currentPage}
                   totalItems={totalItems}
+                  pageSize={10}
+                   mode="compact"
                   hasMore={hasMore}
                   itemsShown={paginatedTasks.length}
                   label="tasks"

@@ -136,6 +136,7 @@ export default function Projects() {
         <Pagination
           currentPage={currentPage}
           totalItems={totalItems}
+          pageSize={10}
           hasMore={hasMore}
           itemsShown={projects.length}
           label="projects"
