@@ -1,5 +1,12 @@
 import { api } from "./api";
-import type { Project, Epic, Task, LoginResponse, ApiUser,StatusVariant } from "../types/apiTypes";
+import type {
+  Project,
+  Epic,
+  Task,
+  LoginResponse,
+  ApiUser,
+  StatusVariant,
+} from "../types/apiTypes";
 
 // SIGN UP
 export const signUp = (data: {
@@ -53,7 +60,7 @@ export const createProject = (data: { name: string; description: string }) => {
 
 export const getProjects = (limit: number, offset: number) => {
   return api.get(`/rest/v1/rpc/get_projects?limit=${limit}&offset=${offset}`, {
-    headers:{ Prefer: "count=exact" },
+    headers: { Prefer: "count=exact" },
   });
 };
 export const getProject = (id: string) => {
@@ -75,12 +82,10 @@ export const getProjectEpics = (
   projectId: string,
   limit: number,
   offset: number,
-  searchTerm?: string
+  searchTerm?: string,
 ) => {
   const hasSearch =
-    searchTerm !== undefined &&
-    searchTerm !== null &&
-    searchTerm.trim() !== "";
+    searchTerm !== undefined && searchTerm !== null && searchTerm.trim() !== "";
 
   const url = hasSearch
     ? `/rest/v1/project_epics?project_id=eq.${projectId}&limit=${limit}&offset=${offset}&title=ilike.%25${searchTerm}%25`
@@ -118,7 +123,9 @@ export const deleteTask = (id: string) => {
 
 export const getProjectTasks = (
   projectId: string,
-  status?: StatusVariant
+  status?: StatusVariant,
+  limit?: number,
+  offset?: number,
 ) => {
   let url = `/rest/v1/project_tasks?project_id=eq.${projectId}`;
 
@@ -126,8 +133,24 @@ export const getProjectTasks = (
     url += `&status=eq.${status}`;
   }
 
-  return api.get(url);
+  if (limit !== undefined) {
+    url += `&limit=${limit}`;
+  }
+
+  if (offset !== undefined) {
+    url += `&offset=${offset}`;
+  }
+
+  return api.get<Task[]>(url, {
+    headers: {
+      Prefer: "count=exact",
+    },
+  });
 };
+export const getProjectTask = (projectId: string, id: string) => {
+  return api.get<Task[]>(`/rest/v1/tasks?id=eq.${id}&&project_id=eq.${projectId}`);
+};
+
 export const getEpicTasks = (epicId: string) => {
   return api.get<Task[]>(`/rest/v1/tasks?epic_id=eq.${epicId}`);
 };

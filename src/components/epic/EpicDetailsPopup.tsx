@@ -432,7 +432,7 @@ export default function EpicDetailsPopup({
         </div>
 
         {/* ── Tasks Section ── */}
-        <EpicTasksSection epicId={id} onAddTask={onAddTask} />
+        <EpicTasksSection epicId={id} onAddTask={onAddTask} projectId={projectId!}/>
       </div>
     </div>
   );

@@ -1,8 +1,10 @@
 import BoardViewCard from "./BoardViewCard";
 import { PlusIcon, PlusRoundedIcon } from "../ui/SvgIcons";
-import type { StatusVariant,Task } from "../../types/apiTypes";
+import type { StatusVariant, Task } from "../../types/apiTypes";
 import Button from "../ui/Button";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import DetailsTask from "./DetailsTaskPopup";
 type Column = {
   id: string;
   label: string;
@@ -82,6 +84,10 @@ export default function BoardViewTasks({
   loading = false,
 }: BoardViewTasksProps) {
   const navigate = useNavigate();
+  const [selectedTask, setSelectedTask] = useState<{
+    taskId: string;
+    projectId: string;
+  } | null>(null);
   return (
     <div className="h-screen flex flex-col">
       <div className="flex-1 overflow-x-auto">
@@ -121,7 +127,6 @@ export default function BoardViewTasks({
                   </Button>
                 </div>
 
-         
                 {!loading && (
                   <Button
                     onClick={() =>
@@ -136,14 +141,9 @@ export default function BoardViewTasks({
                   </Button>
                 )}
 
-              
                 {loading ? (
                   <div className="space-y-2">
-                     <div
-                      
-                        className="h-12 bg-(--color-surface-highest) animate-pulse rounded"
-                      >
-                        </div>
+                    <div className="h-12 bg-(--color-surface-highest) animate-pulse rounded"></div>
                     {[...Array(3)].map((_, i) => (
                       <div
                         key={i}
@@ -162,6 +162,11 @@ export default function BoardViewTasks({
                           task.status === "REOPENED"
                         }
                         userName={task.assignee?.name ?? ""}
+                        taskId={task.id}
+                        projectId={projectId}
+                        onClick={(taskId, projectId) =>
+                          setSelectedTask({ taskId, projectId })
+                        }
                       />
                     </div>
                   ))
@@ -171,6 +176,13 @@ export default function BoardViewTasks({
           })}
         </div>
       </div>
+      {selectedTask && (
+        <DetailsTask
+          taskId={selectedTask.taskId}
+          projectId={selectedTask.projectId}
+          onClose={() => setSelectedTask(null)}
+        />
+      )}
     </div>
   );
 }

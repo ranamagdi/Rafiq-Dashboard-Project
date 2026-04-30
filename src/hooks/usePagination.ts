@@ -116,19 +116,24 @@ export function usePagination<T>({
       searchTermRef.current = term;
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
-        setSearchParams({ page: "1" });
+        setSearchParams((prev) => {
+          const params = new URLSearchParams(prev);
+          params.set("page", "1");
+          return params;
+        });
         fetchPage(1, false, term);
       }, 400);
     },
     [fetchPage, setSearchParams],
   );
 
-  useEffect(() => {
-    if (rawPage === null) {
-      setSearchParams({ page: "1" }, { replace: true });
-    }
-  }, [rawPage, setSearchParams]);
-
+useEffect(() => {
+  const params = new URLSearchParams(searchParams);
+  if (!params.get("page")) {
+    params.set("page", "1");
+    setSearchParams(params, { replace: true });
+  }
+}, [searchParams, setSearchParams]);
   useEffect(() => {
     if (hasMountedRef.current) return;
     hasMountedRef.current = true;
@@ -142,8 +147,12 @@ export function usePagination<T>({
   const goToPage = useCallback(
     (pageNum: number) => {
       setSearchTermState("");
-      searchTermRef.current = ""; 
-      setSearchParams({ page: String(pageNum) });
+      searchTermRef.current = "";
+      setSearchParams((prev) => {
+        const params = new URLSearchParams(prev);
+        params.set("page", String(pageNum));
+        return params;
+      });
       fetchPage(pageNum, false);
       window.scrollTo({ top: 0, behavior: "smooth" });
     },

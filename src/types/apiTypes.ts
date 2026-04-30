@@ -29,7 +29,7 @@ export interface Task {
   description?: string;
   due_date?: string | Date;
   status: StatusVariant;
-
+  
   task_id?: string;
 
   assignee?: {
@@ -37,7 +37,7 @@ export interface Task {
     name: string;
     email?: string;
   };
-
+  created_at:string;
   created_by?: {
     id: string;
     name: string;

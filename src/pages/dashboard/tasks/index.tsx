@@ -1,17 +1,21 @@
-import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import BoardView from "../../../components/tasks/BoardViewTasks";
 import ListView from "../../../components/tasks/ListViewTasks";
+import { MobileViewTask } from "../../../components/tasks/MobileViewTask";
 import Breadcrumb from "../../../components/common/Breadcramb/Breadcrumb";
 import { getProjectTasks } from "../../../services/endpoints";
 import type { Task, StatusVariant } from "../../../types/apiTypes";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
+import { usePagination } from "../../../hooks/usePagination";
 import { useNavigate } from "react-router-dom";
 import { ICONS } from "../../../assets/index";
+import DetailsTask from "../../../components/tasks/DetailsTaskPopup";
 import { useAppSelector } from "../../../hooks/reduxHooks";
 import { PlusIcon } from "../../../components/ui/SvgIcons";
+import { useState, useEffect } from "react";
 import useIsMobile from "../../../hooks/useIsMobile";
+import Pagination from "../../../components/common/Pagination/Pagination";
 const STATUSES: StatusVariant[] = [
   "TO_DO",
   "IN_PROGRESS",
@@ -40,14 +44,54 @@ export default function Tasks() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { projectTitle } = useAppSelector((s) => s.project);
   const isMobile = useIsMobile();
-  const viewFromUrl = searchParams.get("view") as "board" | "list" | null;
-  const [view, setView] = useState<"board" | "list">(viewFromUrl || "board");
-  const [tasks, setTasks] =useState<Record<StatusVariant, Task[]>>(EMPTY_TASKS);
-  const [loading, setLoading] = useState(true);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
 
+  const view = (searchParams.get("view") as "board" | "list") || "board";
+  const [tasks, setTasks] =
+    useState<Record<StatusVariant, Task[]>>(EMPTY_TASKS);
+  const [loading, setLoading] = useState(true);
+  const [selectedTask, setSelectedTask] = useState<{
+    taskId: string;
+    projectId: string;
+  } | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const {
+    items: paginatedTasks,
+    loading: listLoading,
+    error: listError,
+    currentPage,
+    totalItems,
+    hasMore,
+    isInvalidPage,
+    handlePreviousPage,
+    handleNextPage,
+    handlePageClick,
+    getVisiblePages,
+    lastElementRef,
+    isOutOfRange,
+  } = usePagination<Task>({
+    fetchFn: async (limit, offset) => {
+      const res = await getProjectTasks(
+        projectId as string,
+        undefined,
+        limit,
+        offset,
+      );
+
+      const contentRange = res.headers.get("content-range");
+      const total = contentRange
+        ? parseInt(contentRange.split("/")[1], 10)
+        : (res.data?.length ?? 0);
+
+      return {
+        data: res.data ?? [],
+        total,
+      };
+    },
+  });
   useEffect(() => {
     const fetchTasks = async () => {
+      if (view !== "board" || isMobile) return;
+
       setLoading(true);
       try {
         const results = await Promise.all(
@@ -79,21 +123,53 @@ export default function Tasks() {
     };
 
     fetchTasks();
-  }, [projectId]);
-
+  }, [projectId, view, isMobile]);
   useEffect(() => {
-    setSearchParams({ view });
-  }, [view, setSearchParams]);
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
 
+        if (!params.get("page")) {
+          params.set("page", "1");
+        }
+
+        return params;
+      },
+      { replace: true },
+    );
+  }, [setSearchParams]);
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+
+    if (!params.get("view")) {
+      params.set("view", "board");
+      setSearchParams(params, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
   function handleViewChange(newView: "board" | "list") {
-    setView(newView);
     setDropdownOpen(false);
+
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      params.set("view", newView);
+      params.set("page", "1");
+      return params;
+    });
   }
 
   function goToCreateTask() {
     navigate(`/dashboard/project/${projectId}/tasks/new`);
   }
-  const allTasks = Object.values(tasks).flat();
+  const isBoard = view === "board" && !isMobile;
+  const isMobileView = isMobile;
+  if (!isMobile && view === "list" && (isInvalidPage || isOutOfRange)) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-gray-500 mb-4">Invalid page</p>
+        <Button onClick={() => handlePageClick(1)}>Go to Page 1</Button>
+      </div>
+    );
+  }
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
       <Breadcrumb />
@@ -178,10 +254,58 @@ export default function Tasks() {
           </div>
         </div>
       </div>
-      {view === "board" && !isMobile ? (
+
+      {isMobileView ? (
+        <div className="space-y-2">
+          {paginatedTasks.map((task, index) => {
+            const isLast = paginatedTasks.length === index + 1;
+            return (
+              <div key={task.id} ref={isLast ? lastElementRef : null}>
+                <MobileViewTask
+                  task={task}
+                  onClick={(taskId, projectId) =>
+                    setSelectedTask({ taskId, projectId })
+                  }
+                />
+              </div>
+            );
+          })}
+        </div>
+      ) : isBoard ? (
         <BoardView tasks={tasks} projectId={projectId!} loading={loading} />
       ) : (
-        <ListView tasks={allTasks} loading={loading} />
+        <>
+          <ListView
+            tasks={paginatedTasks}
+            loading={listLoading}
+            error={listError}
+            onRowClick={(taskId, projectId) =>
+              setSelectedTask({ taskId, projectId })
+            }
+            pagination={
+              !listLoading && paginatedTasks.length > 0 ? (
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={totalItems}
+                  hasMore={hasMore}
+                  itemsShown={paginatedTasks.length}
+                  label="tasks"
+                  getVisiblePages={getVisiblePages}
+                  handlePreviousPage={handlePreviousPage}
+                  handleNextPage={handleNextPage}
+                  handlePageClick={handlePageClick}
+                />
+              ) : null
+            }
+          />
+        </>
+      )}
+      {selectedTask && (
+        <DetailsTask
+          taskId={selectedTask.taskId}
+          projectId={selectedTask.projectId}
+          onClose={() => setSelectedTask(null)}
+        />
       )}
     </div>
   );
