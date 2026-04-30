@@ -17,7 +17,8 @@ const Button = ({
   type = "button",
   ...rest
 }: Props) => {
-  const base = "h-10 px-6 rounded-sm text-sm font-semibold transition flex items-center justify-center";
+const base =
+  "px-6 py-2.5 rounded-sm text-sm font-semibold transition flex items-center justify-center";
 
   const variants = {
     primary:

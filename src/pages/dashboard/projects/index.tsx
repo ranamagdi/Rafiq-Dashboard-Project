@@ -79,8 +79,8 @@ export default function Projects() {
               Manage and curate your projects
             </p>
           </div>
-          <div className="col-span-12 md:col-span-2 justify-end hidden sm:flex">
-            <Button onClick={() => navigate("/dashboard/project/add")}>
+          <div className="col-span-12 md:col-span-2 justify-end hidden sm:flex ">
+            <Button  onClick={() => navigate("/dashboard/project/add")}>
               Create New Project
             </Button>
           </div>

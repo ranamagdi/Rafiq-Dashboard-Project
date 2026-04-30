@@ -304,7 +304,7 @@ export default function Epics() {
           isOpen={true}
           onAddTask={() =>
             navigate(
-              `/dashboard/project/${projectId}/${selectedEpic.id}/tasks/new`,
+              `/dashboard/project/${projectId}/tasks/new?epicId=${selectedEpic.id}`,
             )
           }
           onClose={() => handleClosePopup()}

@@ -1,7 +1,6 @@
 import BoardViewCard from "./BoardViewCard";
-import type { Task } from "../../types/apiTypes";
 import { PlusIcon, PlusRoundedIcon } from "../ui/SvgIcons";
-import type { StatusVariant } from "../../types/apiTypes";
+import type { StatusVariant,Task } from "../../types/apiTypes";
 import Button from "../ui/Button";
 import { useNavigate } from "react-router-dom";
 type Column = {
@@ -72,79 +71,106 @@ const COLUMNS: Column[] = [
 ];
 type BoardViewTasksProps = {
   tasks: Record<StatusVariant, Task[]>;
-   projectId: string;
+  projectId: string;
   epicId?: string;
+  loading?: boolean;
 };
 
 export default function BoardViewTasks({
   tasks,
   projectId,
-  epicId,
-}: BoardViewTasksProps ) {
+  loading = false,
+}: BoardViewTasksProps) {
   const navigate = useNavigate();
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-4">
-      {COLUMNS.map((col) => {
-        const colTasks = tasks?.[col.status] ?? [];
+    <div className="h-screen flex flex-col">
+      <div className="flex-1 overflow-x-auto">
+        <div className="grid grid-cols-8 gap-6 min-w-max">
+          {COLUMNS.map((col) => {
+            const colTasks = tasks?.[col.status] ?? [];
 
-        return (
-          <div key={col.id}>
-            <div className="flex items-center justify-between  mb-3">
-              <div className="flex items-center gap-2">
-                <span
-                  className="w-1.75 h-1.75 rounded-full"
-                  style={{ background: col.dotColor }}
-                />
-                <span className="text-[11px] font-bold tracking-widest uppercase text-gray-500">
-                  {col.label}
-                </span>
+            return (
+              <div key={col.id} className="min-w-62.5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ background: col.dotColor }}
+                    />
 
-                <span
-                  className={`text-[11px] font-semibold px-2 py-0.5 rounded-sm ${col.badgeClass}`}
-                >
-                  {colTasks.length}
-                </span>
+                    <span className="text-[11px] font-bold tracking-widest uppercase text-gray-500">
+                      {col.label}
+                    </span>
+
+                    <span
+                      className={`text-[11px] font-semibold px-2 py-0.5 rounded-sm ${col.badgeClass}`}
+                    >
+                      {loading ? "..." : colTasks.length}
+                    </span>
+                  </div>
+
+                  <Button
+                    className="bg-transparent text-gray-400 shadow-transparent px-0"
+                    onClick={() =>
+                      navigate(
+                        `/dashboard/project/${projectId}/tasks/new?status=${col.status}`,
+                      )
+                    }
+                  >
+                    <PlusIcon />
+                  </Button>
+                </div>
+
+         
+                {!loading && (
+                  <Button
+                    onClick={() =>
+                      navigate(
+                        `/dashboard/project/${projectId}/tasks/new?status=${col.status}`,
+                      )
+                    }
+                    className="mt-5 bg-transparent gap-2 w-full border-2 border-dashed border-gray-200 px-3 py-3 text-gray-500 hover:border-gray-400 transition mb-4"
+                  >
+                    <PlusRoundedIcon />
+                    ADD NEW TASK
+                  </Button>
+                )}
+
+              
+                {loading ? (
+                  <div className="space-y-2">
+                     <div
+                      
+                        className="h-12 bg-(--color-surface-highest) animate-pulse rounded"
+                      >
+                        </div>
+                    {[...Array(3)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="h-20 bg-(--color-surface-highest) animate-pulse rounded"
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  colTasks.map((task) => (
+                    <div key={task.id} className="mb-2.5">
+                      <BoardViewCard
+                        title={task.title}
+                        date={task.due_date}
+                        isDelayed={
+                          task.status === "BLOCKED" ||
+                          task.status === "REOPENED"
+                        }
+                        userName={task.assignee?.name ?? ""}
+                      />
+                    </div>
+                  ))
+                )}
               </div>
-
-              <Button
-                className="bg-transparent text-gray-400 shadow-transparent px-0"
-                onClick={() =>
-                  navigate(
-                    `/dashboard/project/${projectId}/${epicId ?? "none"}/${col.status}/tasks/new`,
-                  )
-                }
-              >
-                <PlusIcon />
-              </Button>
-            </div>
-
-            <Button
-              onClick={() =>
-                navigate(
-                  `/dashboard/project/${projectId}/${epicId ?? "none"}/${col.status}/tasks/new`,
-                )
-              }
-              className="mt-5 bg-transparent gap-2 w-full border-2 border-dashed border-gray-200 px-3 py-3 text-gray-500  hover:border-gray-400 transition mb-4"
-            >
-              <PlusRoundedIcon />
-              ADD NEW TASK
-            </Button>
-
-            {colTasks.map((task) => (
-              <div key={task.id} className="mb-2.5">
-                <BoardViewCard
-                  title={task.title}
-                  date={task.due_date}
-                  isDelayed={
-                    task.status === "BLOCKED" || task.status === "REOPENED"
-                  }
-                  userName={task.assignee?.name ?? ""}
-                />
-              </div>
-            ))}
-          </div>
-        );
-      })}
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

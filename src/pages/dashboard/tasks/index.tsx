@@ -39,10 +39,10 @@ export default function Tasks() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { projectTitle } = useAppSelector((s) => s.project);
-  const isMobile=useIsMobile()
+  const isMobile = useIsMobile();
   const viewFromUrl = searchParams.get("view") as "board" | "list" | null;
   const [view, setView] = useState<"board" | "list">(viewFromUrl || "board");
-  const [tasks, setTasks] = useState<Record<StatusVariant, Task[]>>(EMPTY_TASKS);
+  const [tasks, setTasks] =useState<Record<StatusVariant, Task[]>>(EMPTY_TASKS);
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -51,7 +51,9 @@ export default function Tasks() {
       setLoading(true);
       try {
         const results = await Promise.all(
-          STATUSES.map((status) => getProjectTasks(projectId as string, status))
+          STATUSES.map((status) =>
+            getProjectTasks(projectId as string, status),
+          ),
         );
 
         const grouped: Record<StatusVariant, Task[]> = {
@@ -91,12 +93,12 @@ export default function Tasks() {
   function goToCreateTask() {
     navigate(`/dashboard/project/${projectId}/tasks/new`);
   }
-
+  const allTasks = Object.values(tasks).flat();
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
       <Breadcrumb />
 
-     <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4 lg:items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4 lg:items-center">
         <div>
           <h1 className="text-[28px] font-semibold mt-2 text-[#041B3C]">
             Active Workboard
@@ -120,14 +122,15 @@ export default function Tasks() {
           </Button>
 
           <div className="hidden sm:grid grid-flow-col auto-cols-max items-center gap-3 justify-end">
-      
             <div className="relative">
               <Button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className="grid grid-flow-col auto-cols-max items-center gap-2 px-3 h-10 rounded-lg bg-white text-[#041B3C] text-sm font-medium"
               >
                 <img
-                  src={view === "board" ? ICONS.boardViewIcon : ICONS.listViewIcon}
+                  src={
+                    view === "board" ? ICONS.boardViewIcon : ICONS.listViewIcon
+                  }
                   className="w-4 h-4"
                 />
                 <span className="text-[14px]">
@@ -175,13 +178,10 @@ export default function Tasks() {
           </div>
         </div>
       </div>
-
-      {loading ? (
-        <p>Loading...</p>
-      ) : view === "board" && !isMobile ? (
-        <BoardView tasks={tasks} projectId={projectId!}/>
+      {view === "board" && !isMobile ? (
+        <BoardView tasks={tasks} projectId={projectId!} loading={loading} />
       ) : (
-        <ListView tasks={tasks} />
+        <ListView tasks={allTasks} loading={loading} />
       )}
     </div>
   );

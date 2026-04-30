@@ -10,7 +10,7 @@ import {
   getProjectEpic,
 } from "../../../services/endpoints";
 import { useForm, useWatch, type SubmitHandler } from "react-hook-form";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import type {
@@ -59,7 +59,11 @@ type TaskFormValues = z.infer<typeof tasksSchema>;
 
 export default function CreateTask() {
   const navigate = useNavigate();
-  const { projectId,epicId } = useParams();
+  const { projectId } = useParams();
+  const [searchParams] = useSearchParams();
+
+  const statusFromQuery = searchParams.get("status") as StatusVariant | null;
+  const epicIdFromQuery = searchParams.get("epicId");
   const [members, setMembers] = useState<Member[]>([]);
   const [epics, setEpics] = useState<Epic[]>([]);
   const STATUS_OPTIONS: StatusVariant[] = [
@@ -82,8 +86,8 @@ export default function CreateTask() {
     mode: "onChange",
     resolver: zodResolver(tasksSchema),
     defaultValues: {
-      status: "TO_DO",
-       epic_id: epicId || "", 
+      status: statusFromQuery || "TO_DO",
+      epic_id: epicIdFromQuery || "",
     },
   });
 
@@ -114,30 +118,38 @@ export default function CreateTask() {
     fetchMembers();
   }, [projectId]);
 
- useEffect(() => {
-  if (!projectId) return;
+  useEffect(() => {
+  if (statusFromQuery || epicIdFromQuery) {
+    reset((prev) => ({
+      ...prev,
+      status: statusFromQuery || prev.status,
+      epic_id: epicIdFromQuery || prev.epic_id,
+    }));
+  }
+}, [statusFromQuery, epicIdFromQuery, reset]);
+  useEffect(() => {
+    if (!projectId) return;
 
-  const fetchEpics = async () => {
-    try {
-      const res = await getProjectEpic(projectId, epicId);
-      const data: Epic[] = res.data as Epic[];
+    const fetchEpics = async () => {
+      try {
+        const res = await getProjectEpic(projectId, epicIdFromQuery!);
+        const data: Epic[] = res.data as Epic[];
 
-      setEpics(data || []);
+        setEpics(data || []);
 
-   
-      if (epicId) {
-        reset((prev) => ({
-          ...prev,
-          epic_id: epicId,
-        }));
+        if (epicIdFromQuery) {
+          reset((prev) => ({
+            ...prev,
+            epic_id: epicIdFromQuery,
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to fetch epics", err);
       }
-    } catch (err) {
-      console.error("Failed to fetch epics", err);
-    }
-  };
+    };
 
-  fetchEpics();
-}, [projectId, epicId, reset]);
+    fetchEpics();
+  }, [projectId, reset, epicIdFromQuery]);
   const handleSubmitForm: SubmitHandler<TaskFormValues> = async (data) => {
     try {
       await createTask({
@@ -251,7 +263,7 @@ export default function CreateTask() {
                 <div className="relative mt-2">
                   <select
                     {...register("status")}
-                    defaultValue=""
+                
                     className="w-full appearance-none bg-(--color-surface-highest) rounded-sm px-4 py-2.5 text-sm outline-none border-none"
                   >
                     <option value="" disabled hidden>
@@ -313,18 +325,17 @@ export default function CreateTask() {
             <div className="relative mt-2">
               <select
                 {...register("epic_id")}
-         
                 className="w-full appearance-none  bg-(--color-surface-highest) rounded-sm px-4 py-2.5 text-sm outline-none border-none"
               >
                 <option value="">Select Epic Link</option>
 
                 {epics.map((epic) => (
-                 <option key={epic.id} value={epic.id} >
-                ({epic.id}){" "}
-                {epic.title.length > 100
-                    ? epic.title.slice(0, 100) + "..."
-                    : epic.title}
-                </option>
+                  <option key={epic.id} value={epic.id}>
+                    ({epic.id}){" "}
+                    {epic.title.length > 100
+                      ? epic.title.slice(0, 100) + "..."
+                      : epic.title}
+                  </option>
                 ))}
               </select>
 
@@ -404,7 +415,6 @@ export default function CreateTask() {
                 onClick={() => navigate(-1)}
                 color="var(--color-slate-medium-blue)"
               >
-               
                 Back
               </Button>
 
@@ -413,7 +423,7 @@ export default function CreateTask() {
                 disabled={isSubmitting}
                 type="submit"
               >
-                 <PlusIcon className=" sm:hidden"/>
+                <PlusIcon className=" sm:hidden" />
                 {isSubmitting ? "Creating..." : "Create Task"}
               </Button>
             </div>
