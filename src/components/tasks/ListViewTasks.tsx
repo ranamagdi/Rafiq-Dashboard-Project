@@ -171,6 +171,7 @@ export default function ListViewTasks({
       <div className="border-t border-[#F3F4F6] bg-white px-6 ">
         {pagination}
       </div>
+    
     </div>
   );
 }

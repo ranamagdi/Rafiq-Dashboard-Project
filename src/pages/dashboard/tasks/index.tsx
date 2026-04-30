@@ -171,7 +171,7 @@ export default function Tasks() {
     );
   }
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6  mb-25 sm:mb-0">
       <Breadcrumb />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4 lg:items-center">
@@ -259,8 +259,12 @@ export default function Tasks() {
         <div className="space-y-2">
           {paginatedTasks.map((task, index) => {
             const isLast = paginatedTasks.length === index + 1;
+
             return (
-              <div key={task.id} ref={isLast ? lastElementRef : null}>
+              <div
+                key={task.id}
+                ref={isMobile ? (isLast ? lastElementRef : null) : null}
+              >
                 <MobileViewTask
                   task={task}
                   onClick={(taskId, projectId) =>
@@ -278,12 +282,12 @@ export default function Tasks() {
           <ListView
             tasks={paginatedTasks}
             loading={listLoading}
-            error={listError}
+            error={listError?.message ?? null}
             onRowClick={(taskId, projectId) =>
               setSelectedTask({ taskId, projectId })
             }
             pagination={
-              !listLoading && paginatedTasks.length > 0 ? (
+              !isMobile && !listLoading && paginatedTasks.length > 0 ? (
                 <Pagination
                   currentPage={currentPage}
                   totalItems={totalItems}

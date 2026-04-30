@@ -25,10 +25,10 @@ type Props = {
 export function MobileViewTask({ task ,onClick}: Props) {
   return (
     <div
-      className="md:hidden px-4 py-4 hover:bg-[#F9FAFB] transition bg-white"
+      className="md:hidden px-4 py-4 hover:bg-[#F9FAFB] transition bg-white "
       onClick={() => onClick(task.id, task.project_id)}
     >
-      {/* Header */}
+  
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-semibold text-(--color-primary)">
           TASK-{task.id.slice(0, 4).toUpperCase()}
