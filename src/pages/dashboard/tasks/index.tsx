@@ -4,7 +4,7 @@ import ListView from "../../../components/tasks/ListViewTasks";
 import { MobileViewTask } from "../../../components/tasks/MobileViewTask";
 import Breadcrumb from "../../../components/common/Breadcramb/Breadcrumb";
 import { getProjectTasks } from "../../../services/endpoints";
-import type { Task, StatusVariant } from "../../../types/apiTypes";
+import type { Task } from "../../../types/apiTypes";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import { usePagination } from "../../../hooks/usePagination";
@@ -16,27 +16,6 @@ import { PlusIcon } from "../../../components/ui/SvgIcons";
 import { useState, useEffect } from "react";
 import useIsMobile from "../../../hooks/useIsMobile";
 import Pagination from "../../../components/common/Pagination/Pagination";
-const STATUSES: StatusVariant[] = [
-  "TO_DO",
-  "IN_PROGRESS",
-  "DONE",
-  "BLOCKED",
-  "IN_REVIEW",
-  "READY_FOR_QA",
-  "REOPENED",
-  "READY_FOR_PRODUCTION",
-];
-
-const EMPTY_TASKS: Record<StatusVariant, Task[]> = {
-  TO_DO: [],
-  IN_PROGRESS: [],
-  DONE: [],
-  BLOCKED: [],
-  IN_REVIEW: [],
-  READY_FOR_QA: [],
-  REOPENED: [],
-  READY_FOR_PRODUCTION: [],
-};
 
 export default function Tasks() {
   const { projectId } = useParams();
@@ -46,14 +25,29 @@ export default function Tasks() {
   const isMobile = useIsMobile();
 
   const view = (searchParams.get("view") as "board" | "list") || "board";
-  const [tasks, setTasks] =
-    useState<Record<StatusVariant, Task[]>>(EMPTY_TASKS);
-  const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<{
     taskId: string;
     projectId: string;
   } | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  // Mobile — infinite scroll
+  const {
+    items: mobileTasks,
+    lastElementRef,
+  } = usePagination<Task>({
+    mode: "infinite",
+    fetchFn: async (limit, offset) => {
+      const res = await getProjectTasks(projectId as string, undefined, limit, offset);
+      const contentRange = res.headers.get("content-range");
+      const total = contentRange
+        ? parseInt(contentRange.split("/")[1], 10)
+        : (res.data?.length ?? 0);
+      return { data: res.data ?? [], total };
+    },
+  });
+
+  // Desktop list — paginated
   const {
     items: paginatedTasks,
     loading: listLoading,
@@ -66,94 +60,52 @@ export default function Tasks() {
     handleNextPage,
     handlePageClick,
     getVisiblePages,
-    lastElementRef,
     isOutOfRange,
-    
   } = usePagination<Task>({
     fetchFn: async (limit, offset) => {
-      const res = await getProjectTasks(
-        projectId as string,
-        undefined,
-        limit,
-        offset,
-      );
-
+      const res = await getProjectTasks(projectId as string, undefined, limit, offset);
       const contentRange = res.headers.get("content-range");
       const total = contentRange
         ? parseInt(contentRange.split("/")[1], 10)
         : (res.data?.length ?? 0);
-
-      return {
-        data: res.data ?? [],
-        total,
-      };
+      return { data: res.data ?? [], total };
     },
   });
-  useEffect(() => {
-    const fetchTasks = async () => {
-      if (view !== "board" || isMobile) return;
 
-      setLoading(true);
-      try {
-        const results = await Promise.all(
-          STATUSES.map((status) =>
-            getProjectTasks(projectId as string, status),
-          ),
-        );
-
-        const grouped: Record<StatusVariant, Task[]> = {
-          TO_DO: [],
-          IN_PROGRESS: [],
-          DONE: [],
-          BLOCKED: [],
-          IN_REVIEW: [],
-          READY_FOR_QA: [],
-          REOPENED: [],
-          READY_FOR_PRODUCTION: [],
-        };
-
-        STATUSES.forEach((status, index) => {
-          const data = results[index]?.data;
-          grouped[status] = Array.isArray(data) ? data : [];
-        });
-
-        setTasks(grouped);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTasks();
-  }, [projectId, view, isMobile]);
   useEffect(() => {
     setSearchParams(
       (prev) => {
         const params = new URLSearchParams(prev);
-
-        if (!params.get("page")) {
+        if (view === "list" && !params.get("page")) {
           params.set("page", "1");
         }
-
+        if (view === "board") {
+          params.delete("page");
+        }
         return params;
       },
       { replace: true },
     );
-  }, [setSearchParams]);
+  }, [setSearchParams, view]);
+
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
-
     if (!params.get("view")) {
       params.set("view", "board");
       setSearchParams(params, { replace: true });
     }
   }, [searchParams, setSearchParams]);
+
   function handleViewChange(newView: "board" | "list") {
     setDropdownOpen(false);
-
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev);
       params.set("view", newView);
-      params.set("page", "1");
+      if (newView === "list") {
+        params.set("page", "1");
+      } else {
+        params.delete("page");
+      }
       return params;
     });
   }
@@ -161,8 +113,10 @@ export default function Tasks() {
   function goToCreateTask() {
     navigate(`/dashboard/project/${projectId}/tasks/new`);
   }
+
   const isBoard = view === "board" && !isMobile;
   const isMobileView = isMobile;
+
   if (!isMobile && view === "list" && (isInvalidPage || isOutOfRange)) {
     return (
       <div className="p-6 text-center">
@@ -171,8 +125,9 @@ export default function Tasks() {
       </div>
     );
   }
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6  mb-25 sm:mb-0">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 mb-25 sm:mb-0">
       <Breadcrumb />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4 lg:items-center">
@@ -205,9 +160,7 @@ export default function Tasks() {
                 className="grid grid-flow-col auto-cols-max items-center gap-2 px-3 h-10 rounded-lg bg-white text-[#041B3C] text-sm font-medium"
               >
                 <img
-                  src={
-                    view === "board" ? ICONS.boardViewIcon : ICONS.listViewIcon
-                  }
+                  src={view === "board" ? ICONS.boardViewIcon : ICONS.listViewIcon}
                   className="w-4 h-4"
                 />
                 <span className="text-[14px]">
@@ -228,19 +181,14 @@ export default function Tasks() {
                 <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-md z-50">
                   <div
                     onClick={() => handleViewChange("board")}
-                    className={`grid grid-flow-col auto-cols-max items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 ${
-                      view === "board" ? "bg-gray-100" : ""
-                    }`}
+                    className={`grid grid-flow-col auto-cols-max items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 ${view === "board" ? "bg-gray-100" : ""}`}
                   >
                     <img src={ICONS.boardViewIcon} className="w-4 h-4" />
                     Board View
                   </div>
-
                   <div
                     onClick={() => handleViewChange("list")}
-                    className={`grid grid-flow-col auto-cols-max items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 ${
-                      view === "list" ? "bg-gray-100" : ""
-                    }`}
+                    className={`grid grid-flow-col auto-cols-max items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 ${view === "list" ? "bg-gray-100" : ""}`}
                   >
                     <img src={ICONS.listViewIcon} className="w-4 h-4" />
                     List View
@@ -258,14 +206,10 @@ export default function Tasks() {
 
       {isMobileView ? (
         <div className="space-y-2">
-          {paginatedTasks.map((task, index) => {
-            const isLast = paginatedTasks.length === index + 1;
-
+          {mobileTasks.map((task, index) => {
+            const isLast = mobileTasks.length === index + 1;
             return (
-              <div
-                key={task.id}
-                ref={isMobile ? (isLast ? lastElementRef : null) : null}
-              >
+              <div key={task.id} ref={isLast ? lastElementRef : null}>
                 <MobileViewTask
                   task={task}
                   onClick={(taskId, projectId) =>
@@ -277,7 +221,7 @@ export default function Tasks() {
           })}
         </div>
       ) : isBoard ? (
-        <BoardView tasks={tasks} projectId={projectId!} loading={loading} />
+        <BoardView projectId={projectId!} />
       ) : (
         <>
           <ListView
@@ -293,7 +237,7 @@ export default function Tasks() {
                   currentPage={currentPage}
                   totalItems={totalItems}
                   pageSize={10}
-                   mode="compact"
+                  mode="compact"
                   hasMore={hasMore}
                   itemsShown={paginatedTasks.length}
                   label="tasks"
@@ -307,6 +251,7 @@ export default function Tasks() {
           />
         </>
       )}
+
       {selectedTask && (
         <DetailsTask
           taskId={selectedTask.taskId}

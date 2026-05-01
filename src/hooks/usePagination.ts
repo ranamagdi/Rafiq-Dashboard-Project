@@ -17,6 +17,7 @@ interface UsePaginationOptions<T> {
     searchTerm: string,
   ) => Promise<{ data: T[]; total: number }>;
   limit?: number;
+  mode?: "paginated" | "infinite";
 }
 
 interface UsePaginationReturn<T> {
@@ -44,6 +45,7 @@ interface UsePaginationReturn<T> {
 export function usePagination<T>({
   fetchFn,
   limit = LIMIT,
+  mode = "paginated",
 }: UsePaginationOptions<T>): UsePaginationReturn<T> {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawPage = searchParams.get("page");
@@ -59,31 +61,52 @@ export function usePagination<T>({
   const [totalItems, setTotalItems] = useState(0);
   const [searchTerm, setSearchTermState] = useState("");
 
-  const searchTermRef = useRef("");
+  const searchTermRef = useRef<string>("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const observer = useRef<IntersectionObserver | null>(null);
-  const hasMountedRef = useRef(false);
+ 
+  const infiniteNextPage = useRef<number>(1);
+  const infiniteHasMore = useRef<boolean>(true);
+  const infiniteLoading = useRef<boolean>(false);
+
+  // keep a stable ref to fetchFn so effects don't re-run when it changes
+  const fetchFnRef = useRef(fetchFn);
+  useEffect(() => {
+    fetchFnRef.current = fetchFn;
+  }, [fetchFn]);
 
   const fetchPage = useCallback(
     async (
       pageNum: number,
       shouldAppend: boolean,
-      term = searchTermRef.current,
+      term: string = searchTermRef.current,
     ) => {
+      if (mode === "infinite") {
+        if (infiniteLoading.current) return;
+        infiniteLoading.current = true;
+      }
+
       setLoading(true);
       setError(null);
       setIsOutOfRange(false);
+
       try {
         const offset = (pageNum - 1) * limit;
-        const { data, total } = await fetchFn(limit, offset, term);
+        const { data, total } = await fetchFnRef.current(limit, offset, term);
 
-        setHasMore(offset + data.length < total);
+        const more = offset + data.length < total;
+        setHasMore(more);
+        setTotalItems(total);
 
         if (shouldAppend) {
           setItems((prev) => [...prev, ...data]);
         } else {
           setItems(data);
-          setTotalItems(total);
+        }
+
+        if (mode === "infinite") {
+          infiniteHasMore.current = more;
+          infiniteNextPage.current = pageNum + 1;
         }
       } catch (err: unknown) {
         const apiErr = err as ApiError;
@@ -94,6 +117,9 @@ export function usePagination<T>({
           setItems([]);
           setTotalItems(0);
           setHasMore(false);
+          if (mode === "infinite") {
+            infiniteHasMore.current = false;
+          }
         } else {
           setError(
             new Error(
@@ -105,10 +131,45 @@ export function usePagination<T>({
         }
       } finally {
         setLoading(false);
+        if (mode === "infinite") {
+          infiniteLoading.current = false;
+        }
       }
     },
-    [fetchFn, limit],
+    [limit, mode], // fetchFn removed — using fetchFnRef instead
   );
+
+  // stable ref to fetchPage so effects don't re-run when it changes
+  const fetchPageRef = useRef(fetchPage);
+  useEffect(() => {
+    fetchPageRef.current = fetchPage;
+  }, [fetchPage]);
+
+  // infinite: run once on mount only
+  useEffect(() => {
+    if (mode !== "infinite") return;
+    infiniteNextPage.current = 1;
+    infiniteHasMore.current = true;
+    infiniteLoading.current = false;
+    fetchPageRef.current(1, false);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // paginated: run on mount and when currentPage changes
+  useEffect(() => {
+    if (mode !== "paginated") return;
+    if (isInvalidPage) return;
+    fetchPageRef.current(currentPage, false);
+  }, [currentPage, mode, isInvalidPage]); // fetchPage intentionally excluded via ref
+
+  // paginated: sync page param in URL
+  useEffect(() => {
+    if (mode !== "paginated") return;
+    const params = new URLSearchParams(searchParams);
+    if (!params.get("page")) {
+      params.set("page", "1");
+      setSearchParams(params, { replace: true });
+    }
+  }, [searchParams, setSearchParams, mode]);
 
   const setSearchTerm = useCallback(
     (term: string) => {
@@ -116,33 +177,24 @@ export function usePagination<T>({
       searchTermRef.current = term;
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
-        setSearchParams((prev) => {
-          const params = new URLSearchParams(prev);
-          params.set("page", "1");
-          return params;
-        });
-        fetchPage(1, false, term);
+        if (mode === "paginated") {
+          setSearchParams((prev) => {
+            const params = new URLSearchParams(prev);
+            params.set("page", "1");
+            return params;
+          });
+        } else {
+          infiniteNextPage.current = 1;
+          infiniteHasMore.current = true;
+          infiniteLoading.current = false;
+          setItems([]);
+          setHasMore(true);
+          fetchPageRef.current(1, false, term);
+        }
       }, 400);
     },
-    [fetchPage, setSearchParams],
+    [setSearchParams, mode],
   );
-
-useEffect(() => {
-  const params = new URLSearchParams(searchParams);
-  if (!params.get("page")) {
-    params.set("page", "1");
-    setSearchParams(params, { replace: true });
-  }
-}, [searchParams, setSearchParams]);
-  useEffect(() => {
-    if (hasMountedRef.current) return;
-    hasMountedRef.current = true;
-    if (!isInvalidPage) {
-      setTimeout(() => {
-        fetchPage(currentPage, false);
-      }, 0);
-    }
-  }, [fetchPage, searchParams, isInvalidPage, currentPage]);
 
   const goToPage = useCallback(
     (pageNum: number) => {
@@ -153,10 +205,10 @@ useEffect(() => {
         params.set("page", String(pageNum));
         return params;
       });
-      fetchPage(pageNum, false);
+      fetchPageRef.current(pageNum, false);
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
-    [setSearchParams, fetchPage],
+    [setSearchParams],
   );
 
   const handlePreviousPage = useCallback(() => {
@@ -197,21 +249,35 @@ useEffect(() => {
 
   const lastElementRef = useCallback(
     (node: HTMLDivElement | null) => {
-      if (loading || !node) return;
+      if (mode !== "infinite") return;
       observer.current?.disconnect();
+      if (!node) return;
       observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          fetchPage(currentPage + 1, true);
+        if (
+          entries[0].isIntersecting &&
+          infiniteHasMore.current &&
+          !infiniteLoading.current
+        ) {
+          fetchPageRef.current(infiniteNextPage.current, true);
         }
       });
       observer.current.observe(node);
     },
-    [loading, hasMore, currentPage, fetchPage],
+    [mode],
   );
 
   const refresh = useCallback(() => {
-    fetchPage(currentPage, false);
-  }, [fetchPage, currentPage]);
+    if (mode === "infinite") {
+      infiniteNextPage.current = 1;
+      infiniteHasMore.current = true;
+      infiniteLoading.current = false;
+      setItems([]);
+      setHasMore(true);
+      fetchPageRef.current(1, false);
+    } else {
+      fetchPageRef.current(currentPage, false);
+    }
+  }, [currentPage, mode]);
 
   return {
     items,

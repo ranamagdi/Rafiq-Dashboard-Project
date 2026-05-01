@@ -22,13 +22,12 @@ type Props = {
   onClick: (taskId: string, projectId: string) => void;
 };
 
-export function MobileViewTask({ task ,onClick}: Props) {
+export function MobileViewTask({ task, onClick }: Props) {
   return (
     <div
       className="md:hidden px-4 py-4 hover:bg-[#F9FAFB] transition bg-white "
       onClick={() => onClick(task.id, task.project_id)}
     >
-  
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-semibold text-(--color-primary)">
           TASK-{task.id.slice(0, 4).toUpperCase()}
@@ -53,8 +52,9 @@ export function MobileViewTask({ task ,onClick}: Props) {
             {getInitials(task.assignee.name)}
           </div>
         ) : (
-          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-400 shrink-0">
-            ?
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+         
+            <span>Not assigned</span>
           </div>
         )}
 
@@ -64,7 +64,7 @@ export function MobileViewTask({ task ,onClick}: Props) {
               Due Date
             </p>
             <p className="text-sm text-gray-600">
-              {task.due_date ? formatDate(task.due_date) : "—"}
+              {task.due_date ? formatDate(task.due_date) : "No due date"}
             </p>
           </div>
 
