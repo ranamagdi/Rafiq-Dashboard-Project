@@ -156,7 +156,7 @@ export default function BoardViewTasks({
                     <div key={task.id} className="mb-2.5">
                       <BoardViewCard
                         title={task.title}
-                        date={task.due_date}
+                        date={task.due_date ?? undefined}
                         isDelayed={
                           task.status === "BLOCKED" ||
                           task.status === "REOPENED"

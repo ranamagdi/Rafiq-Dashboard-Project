@@ -71,19 +71,21 @@ export const ProjectTeamIcon = () => {
     </svg>
   );
 };
-export const ProjectTeamResponsiveIcon = () => {
-  return (
-    <svg
+
+export const ProjectTeamResponsiveIcon: React.FC<{ className?: string }> = ({
+  className,
+}) => (
+  <svg
       width="48"
       height="6"
       viewBox="0 0 48 6"
+      className={className}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
       <rect width="48" height="6" rx="3" fill="#C3C6D6" fillOpacity="0.3" />
     </svg>
-  );
-};
+);
 export const CalendarIcon: React.FC<{ color?: string; className?: string }> = ({
   color,
   className,

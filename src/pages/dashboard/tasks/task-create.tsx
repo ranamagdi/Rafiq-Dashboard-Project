@@ -119,14 +119,14 @@ export default function CreateTask() {
   }, [projectId]);
 
   useEffect(() => {
-  if (statusFromQuery || epicIdFromQuery) {
-    reset((prev) => ({
-      ...prev,
-      status: statusFromQuery || prev.status,
-      epic_id: epicIdFromQuery || prev.epic_id,
-    }));
-  }
-}, [statusFromQuery, epicIdFromQuery, reset]);
+    if (statusFromQuery || epicIdFromQuery) {
+      reset((prev) => ({
+        ...prev,
+        status: statusFromQuery || prev.status,
+        epic_id: epicIdFromQuery || prev.epic_id,
+      }));
+    }
+  }, [statusFromQuery, epicIdFromQuery, reset]);
   useEffect(() => {
     if (!projectId) return;
 
@@ -155,19 +155,24 @@ export default function CreateTask() {
       await createTask({
         ...data,
         project_id: projectId!,
+        assignee_id: data.assignee_id|| null ,
+        due_date: data.due_date || null,
+        epic_id: data.epic_id || null,
       });
 
       reset();
 
       setStatus({
         type: "success",
-        message: "Epic created successfully",
+        message: "Task created successfully",
       });
+
       setTimeout(() => {
         navigate(`/dashboard/project/${projectId}/tasks`);
       }, 1500);
     } catch (err: unknown) {
       const error = err as ApiError;
+
       const message =
         error?.response?.data?.message ||
         error?.message ||
@@ -263,7 +268,6 @@ export default function CreateTask() {
                 <div className="relative mt-2">
                   <select
                     {...register("status")}
-                
                     className="w-full appearance-none bg-(--color-surface-highest) rounded-sm px-4 py-2.5 text-sm outline-none border-none"
                   >
                     <option value="" disabled hidden>

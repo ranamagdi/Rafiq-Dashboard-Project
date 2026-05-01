@@ -62,7 +62,7 @@ const StatusBadge = ({ status }: { status: string }) => {
         className={`hidden md:flex items-center justify-between px-3 py-2 rounded-md font-semibold text-sm ${current.style}`}
       >
         <span>{current.label}</span>
-       <ProjectTeamResponsiveIcon/>
+       <ProjectTeamResponsiveIcon className=" md:hidden" />
       
       </div>
 

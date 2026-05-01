@@ -27,16 +27,16 @@ export interface Task {
   epic_id?: string | null;
   title: string;
   description?: string;
-  due_date?: string | Date;
+ due_date?: string | Date | null;
   status: StatusVariant;
   
   task_id?: string;
-
+assignee_id:string | null;
   assignee?: {
     id: string;
     name: string;
     email?: string;
-  };
+  } | null;
   created_at:string;
   created_by?: {
     id: string;
