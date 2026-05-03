@@ -4,8 +4,8 @@ import { getInitials } from "../utils/nameUtils";
 import { formatDate } from "../utils/dateUtils";
 import { CopyLink, EpicId } from "../ui/SvgIcons";
 import type { Task } from "../../types/apiTypes";
-import { Clock, CalendarIcon,ProjectTeamResponsiveIcon } from "../ui/SvgIcons";
-
+import { Clock, CalendarIcon, ProjectTeamResponsiveIcon } from "../ui/SvgIcons";
+import { Toaster, toast } from "react-hot-toast";
 
 interface DetailsTaskProps {
   onClose: () => void;
@@ -57,16 +57,13 @@ const StatusBadge = ({ status }: { status: string }) => {
 
   return (
     <>
-   
       <div
         className={`hidden md:flex items-center justify-between px-3 py-2 rounded-md font-semibold text-sm ${current.style}`}
       >
         <span>{current.label}</span>
-       <ProjectTeamResponsiveIcon className=" md:hidden" />
-      
+        <ProjectTeamResponsiveIcon className=" md:hidden" />
       </div>
 
-    
       <span
         className={`md:hidden inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${current.style}`}
       >
@@ -102,7 +99,15 @@ const DetailsTask = ({ onClose, projectId, taskId }: DetailsTaskProps) => {
   const [fetchState, setFetchState] = useState<FetchState>({
     status: "loading",
   });
-
+const handleCopyLink = async () => {
+  try {
+    await navigator.clipboard.writeText(window.location.href);
+    toast.success("Link copied!");
+  } catch (err) {
+    toast.error("Failed to copy link.");
+    console.error("Failed to copy", err);
+  }
+};
   useEffect(() => {
     let cancelled = false;
     getProjectTask(projectId, taskId)
@@ -132,6 +137,7 @@ const DetailsTask = ({ onClose, projectId, taskId }: DetailsTaskProps) => {
       `}
       onClick={onClose}
     >
+          <Toaster position="bottom-center" /> 
       <div
         className="md:hidden w-full bg-gray-100 rounded-t-3xl shadow-2xl flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
@@ -142,7 +148,6 @@ const DetailsTask = ({ onClose, projectId, taskId }: DetailsTaskProps) => {
 
         {fetchState.status === "loading" && (
           <div className="flex flex-1 overflow-hidden">
-         
             <div className="flex-1 p-8 space-y-4">
               <Skeleton className="h-4 w-24" />
               <Skeleton className="h-7 w-2/3" />
@@ -155,7 +160,6 @@ const DetailsTask = ({ onClose, projectId, taskId }: DetailsTaskProps) => {
               </div>
             </div>
 
-       
             <div className="w-80 p-6 bg-[#F1F3FF] space-y-5">
               <div>
                 <Skeleton className="h-3 w-20 mb-2" />
@@ -301,13 +305,11 @@ const DetailsTask = ({ onClose, projectId, taskId }: DetailsTaskProps) => {
       >
         {fetchState.status === "loading" && (
           <div className="px-5 pb-6 flex flex-col gap-5">
-        
             <div className="flex justify-between items-center pt-2">
               <Skeleton className="h-4 w-20" />
               <Skeleton className="h-6 w-6 rounded-full" />
             </div>
 
-            
             <div className="flex flex-col gap-2">
               <Skeleton className="h-6 w-3/4" />
               <div className="flex justify-between">
@@ -316,7 +318,6 @@ const DetailsTask = ({ onClose, projectId, taskId }: DetailsTaskProps) => {
               </div>
             </div>
 
-         
             <div className="grid grid-cols-2 gap-3">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="bg-gray-50 rounded-2xl p-3 space-y-2">
@@ -448,10 +449,12 @@ const DetailsTask = ({ onClose, projectId, taskId }: DetailsTaskProps) => {
                   </div>
                 </div>
 
-                {/* Fixed footer */}
                 <div className="px-6 py-4 bg-[#F1F3FF] border-t border-gray-200 shrink-0">
                   <div className="flex items-center justify-between">
-                    <button className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800">
+                    <button
+                      onClick={handleCopyLink}
+                      className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800"
+                    >
                       <CopyLink />
                       Copy link
                     </button>

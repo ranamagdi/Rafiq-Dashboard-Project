@@ -18,6 +18,8 @@ interface UsePaginationOptions<T> {
   ) => Promise<{ data: T[]; total: number }>;
   limit?: number;
   mode?: "paginated" | "infinite";
+// UsePaginationOptions — replace the root type
+root?: React.RefObject<Element | null> | Element | null;
 }
 
 interface UsePaginationReturn<T> {
@@ -46,6 +48,7 @@ export function usePagination<T>({
   fetchFn,
   limit = LIMIT,
   mode = "paginated",
+  root, // 👈 added
 }: UsePaginationOptions<T>): UsePaginationReturn<T> {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawPage = searchParams.get("page");
@@ -64,12 +67,19 @@ export function usePagination<T>({
   const searchTermRef = useRef<string>("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const observer = useRef<IntersectionObserver | null>(null);
- 
+
   const infiniteNextPage = useRef<number>(1);
   const infiniteHasMore = useRef<boolean>(true);
   const infiniteLoading = useRef<boolean>(false);
+const rootRef = useRef<Element | null>(null);
+useEffect(() => {
+  if (root && "current" in root) {
+    rootRef.current = root.current;
+  } else {
+    rootRef.current = root ?? null;
+  }
+}, [root]);
 
-  // keep a stable ref to fetchFn so effects don't re-run when it changes
   const fetchFnRef = useRef(fetchFn);
   useEffect(() => {
     fetchFnRef.current = fetchFn;
@@ -136,16 +146,14 @@ export function usePagination<T>({
         }
       }
     },
-    [limit, mode], // fetchFn removed — using fetchFnRef instead
+    [limit, mode],
   );
 
-  // stable ref to fetchPage so effects don't re-run when it changes
   const fetchPageRef = useRef(fetchPage);
   useEffect(() => {
     fetchPageRef.current = fetchPage;
   }, [fetchPage]);
 
-  // infinite: run once on mount only
   useEffect(() => {
     if (mode !== "infinite") return;
     infiniteNextPage.current = 1;
@@ -154,14 +162,12 @@ export function usePagination<T>({
     fetchPageRef.current(1, false);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // paginated: run on mount and when currentPage changes
   useEffect(() => {
     if (mode !== "paginated") return;
     if (isInvalidPage) return;
     fetchPageRef.current(currentPage, false);
-  }, [currentPage, mode, isInvalidPage]); // fetchPage intentionally excluded via ref
+  }, [currentPage, mode, isInvalidPage]);
 
-  // paginated: sync page param in URL
   useEffect(() => {
     if (mode !== "paginated") return;
     const params = new URLSearchParams(searchParams);
@@ -247,23 +253,33 @@ export function usePagination<T>({
     return pages;
   }, [totalItems, currentPage, limit]);
 
+  // 👈 Only change: reads rootRef.current so the observer uses the column
+  //    scroll container instead of the viewport. Re-attaches whenever the
+  //    node changes (same as before) — rootRef always has the latest value.
   const lastElementRef = useCallback(
     (node: HTMLDivElement | null) => {
       if (mode !== "infinite") return;
       observer.current?.disconnect();
       if (!node) return;
-      observer.current = new IntersectionObserver((entries) => {
-        if (
-          entries[0].isIntersecting &&
-          infiniteHasMore.current &&
-          !infiniteLoading.current
-        ) {
-          fetchPageRef.current(infiniteNextPage.current, true);
-        }
-      });
+      observer.current = new IntersectionObserver(
+        (entries) => {
+          if (
+            entries[0].isIntersecting &&
+            infiniteHasMore.current &&
+            !infiniteLoading.current
+          ) {
+            fetchPageRef.current(infiniteNextPage.current, true);
+          }
+        },
+        {
+          root: rootRef.current,   // 👈 column div, not the viewport
+          rootMargin: "100px",
+          threshold: 0,
+        },
+      );
       observer.current.observe(node);
     },
-    [mode],
+    [mode], // rootRef is a ref so it doesn't need to be a dep
   );
 
   const refresh = useCallback(() => {

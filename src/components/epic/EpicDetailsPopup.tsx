@@ -283,7 +283,6 @@ export default function EpicDetailsPopup({
               </div>
             </div>
 
-            {/* ── Title ── */}
             {editingTitle && isEditable ? (
               <div className="flex flex-col gap-1">
                 <Input
@@ -354,7 +353,6 @@ export default function EpicDetailsPopup({
           </div>
         )}
 
-        {/* ── Description ── */}
         <div className="px-7 pb-5">
           <hr className="hidden sm:block border-[#E5E7EB] my-2" />
 
@@ -431,7 +429,6 @@ export default function EpicDetailsPopup({
           />
         </div>
 
-        {/* ── Tasks Section ── */}
         <EpicTasksSection epicId={id} onAddTask={onAddTask} projectId={projectId!}/>
       </div>
     </div>

@@ -10,11 +10,15 @@ import DetailsTask from "../tasks/DetailsTaskPopup";
 
 interface Props {
   epicId: string | null;
-  projectId: string;        
+  projectId: string;
   onAddTask?: () => void;
 }
 
-export default function EpicTasksSection({ epicId, projectId, onAddTask }: Props) {
+export default function EpicTasksSection({
+  epicId,
+  projectId,
+  onAddTask,
+}: Props) {
   const isMobile = useIsMobile();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
@@ -85,10 +89,17 @@ export default function EpicTasksSection({ epicId, projectId, onAddTask }: Props
           </Button>
         </div>
       ) : (
-        <ul className="flex flex-col divide-y divide-(--color-border-light) border border-(--color-border-light) rounded-2xl overflow-hidden mt-2">
+        <ul
+          className="flex flex-col divide-y divide-(--color-border-light) 
+  border border-(--color-border-light) rounded-2xl overflow-hidden mt-2
+  max-h-80 overflow-y-auto"
+        >
           {loading
             ? Array.from({ length: 3 }).map((_, i) => (
-                <li key={i} className="flex items-center justify-between px-5 py-4 animate-pulse">
+                <li
+                  key={i}
+                  className="flex items-center justify-between px-5 py-4 animate-pulse"
+                >
                   <div className="flex items-center gap-4">
                     <div className="w-5 h-5 rounded-full" />
                     <div className="flex flex-col gap-2">
@@ -115,7 +126,9 @@ export default function EpicTasksSection({ epicId, projectId, onAddTask }: Props
                     <div className="flex items-center gap-4">
                       <CheckIcon />
                       <div className="flex flex-col">
-                        <span className="font-semibold text-[#041B3C]">{task.title}</span>
+                        <span className="font-semibold text-[#041B3C]">
+                          {task.title}
+                        </span>
                         <div className="flex items-center gap-2 mt-1 text-sm text-gray-500">
                           <div className="w-6 h-6 rounded-xl bg-(--color-circular) flex items-center justify-center text-[8px] font-semibold text-(--color-primary)">
                             {getInitials(task.assignee?.name || "U")}
@@ -125,30 +138,33 @@ export default function EpicTasksSection({ epicId, projectId, onAddTask }: Props
                       </div>
                     </div>
                     <div className="text-right text-sm">
-                      <p className="text-gray-400 uppercase text-[11px] tracking-wide">Due Date</p>
+                      <p className="text-gray-400 uppercase text-[11px] tracking-wide">
+                        Due Date
+                      </p>
                       <p className="font-medium text-[12px] text-(--color-date)">
                         {task.due_date
-                          ? new Date(task.due_date).toLocaleDateString("en-GB", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })
+                          ? new Date(task.due_date).toLocaleDateString(
+                              "en-GB",
+                              {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )
                           : "—"}
                       </p>
                     </div>
                   </li>
-             
                 </>
-                
               ))}
-                   <Button
-                    onClick={onAddTask}
-                    variant="text"
-                    className="flex sm:hidden gap-2 w-full border-dashed border-2 border-[#C3C6D64D] text-(--color-button-text)"
-                  >
-                    <PlusRoundedIcon />
-                    Add New Task
-                  </Button>
+          <Button
+            onClick={onAddTask}
+            variant="text"
+            className="flex sm:hidden gap-2 w-full border-dashed border-2 border-[#C3C6D64D] text-(--color-button-text)"
+          >
+            <PlusRoundedIcon />
+            Add New Task
+          </Button>
         </ul>
       )}
 
