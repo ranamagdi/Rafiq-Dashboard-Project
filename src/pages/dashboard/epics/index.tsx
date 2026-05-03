@@ -230,7 +230,7 @@ export default function Epics() {
          <EmptyContent
           className="bg-white border border-[#FFFFFF66] backdrop-blur-xs rounded-4xl"
           image={IMAGES.EpicEmpty}
-          title="No epics in this project yet."
+          title="No epics found it."
           description="Break down your large project into manageable
           epics to track progress better and maintain
           architectural clarity."

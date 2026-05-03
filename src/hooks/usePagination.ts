@@ -18,8 +18,7 @@ interface UsePaginationOptions<T> {
   ) => Promise<{ data: T[]; total: number }>;
   limit?: number;
   mode?: "paginated" | "infinite";
-// UsePaginationOptions — replace the root type
-root?: React.RefObject<Element | null> | Element | null;
+  root?: React.RefObject<Element | null>;
 }
 
 interface UsePaginationReturn<T> {
@@ -48,13 +47,16 @@ export function usePagination<T>({
   fetchFn,
   limit = LIMIT,
   mode = "paginated",
-  root, // 👈 added
+  root,
 }: UsePaginationOptions<T>): UsePaginationReturn<T> {
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // ── URL state (single source of truth)
   const rawPage = searchParams.get("page");
   const validatedPage = getValidPage(rawPage);
   const isInvalidPage = rawPage !== null && validatedPage === null;
   const currentPage = validatedPage ?? 1;
+  const searchTerm = searchParams.get("search") ?? "";
 
   const [isOutOfRange, setIsOutOfRange] = useState(false);
   const [items, setItems] = useState<T[]>([]);
@@ -62,23 +64,19 @@ export function usePagination<T>({
   const [error, setError] = useState<Error | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [totalItems, setTotalItems] = useState(0);
-  const [searchTerm, setSearchTermState] = useState("");
 
-  const searchTermRef = useRef<string>("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const observer = useRef<IntersectionObserver | null>(null);
+  const lastNodeRef = useRef<HTMLDivElement | null>(null);
+  const rootPropRef = useRef<React.RefObject<Element | null> | undefined>(root);
+
+  useEffect(() => {
+    rootPropRef.current = root;
+  }, [root]);
 
   const infiniteNextPage = useRef<number>(1);
   const infiniteHasMore = useRef<boolean>(true);
   const infiniteLoading = useRef<boolean>(false);
-const rootRef = useRef<Element | null>(null);
-useEffect(() => {
-  if (root && "current" in root) {
-    rootRef.current = root.current;
-  } else {
-    rootRef.current = root ?? null;
-  }
-}, [root]);
 
   const fetchFnRef = useRef(fetchFn);
   useEffect(() => {
@@ -86,11 +84,7 @@ useEffect(() => {
   }, [fetchFn]);
 
   const fetchPage = useCallback(
-    async (
-      pageNum: number,
-      shouldAppend: boolean,
-      term: string = searchTermRef.current,
-    ) => {
+    async (pageNum: number, shouldAppend: boolean, term: string) => {
       if (mode === "infinite") {
         if (infiniteLoading.current) return;
         infiniteLoading.current = true;
@@ -108,11 +102,7 @@ useEffect(() => {
         setHasMore(more);
         setTotalItems(total);
 
-        if (shouldAppend) {
-          setItems((prev) => [...prev, ...data]);
-        } else {
-          setItems(data);
-        }
+        setItems((prev) => (shouldAppend ? [...prev, ...data] : data));
 
         if (mode === "infinite") {
           infiniteHasMore.current = more;
@@ -127,9 +117,7 @@ useEffect(() => {
           setItems([]);
           setTotalItems(0);
           setHasMore(false);
-          if (mode === "infinite") {
-            infiniteHasMore.current = false;
-          }
+          if (mode === "infinite") infiniteHasMore.current = false;
         } else {
           setError(
             new Error(
@@ -141,9 +129,7 @@ useEffect(() => {
         }
       } finally {
         setLoading(false);
-        if (mode === "infinite") {
-          infiniteLoading.current = false;
-        }
+        if (mode === "infinite") infiniteLoading.current = false;
       }
     },
     [limit, mode],
@@ -154,20 +140,23 @@ useEffect(() => {
     fetchPageRef.current = fetchPage;
   }, [fetchPage]);
 
+  // ── Infinite: initial fetch
   useEffect(() => {
     if (mode !== "infinite") return;
     infiniteNextPage.current = 1;
     infiniteHasMore.current = true;
     infiniteLoading.current = false;
-    fetchPageRef.current(1, false);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    fetchPageRef.current(1, false, searchTerm);
+  }, [mode, searchTerm]);
 
+  // ── Paginated: single fetch trigger
   useEffect(() => {
     if (mode !== "paginated") return;
     if (isInvalidPage) return;
-    fetchPageRef.current(currentPage, false);
-  }, [currentPage, mode, isInvalidPage]);
+    fetchPageRef.current(currentPage, false, searchTerm);
+  }, [currentPage, searchTerm, mode, isInvalidPage]);
 
+  // ── Ensure ?page exists
   useEffect(() => {
     if (mode !== "paginated") return;
     const params = new URLSearchParams(searchParams);
@@ -177,41 +166,30 @@ useEffect(() => {
     }
   }, [searchParams, setSearchParams, mode]);
 
+  // ── Search handler (debounced → URL only)
   const setSearchTerm = useCallback(
     (term: string) => {
-      setSearchTermState(term);
-      searchTermRef.current = term;
       if (debounceRef.current) clearTimeout(debounceRef.current);
+
       debounceRef.current = setTimeout(() => {
-        if (mode === "paginated") {
-          setSearchParams((prev) => {
-            const params = new URLSearchParams(prev);
-            params.set("page", "1");
-            return params;
-          });
-        } else {
-          infiniteNextPage.current = 1;
-          infiniteHasMore.current = true;
-          infiniteLoading.current = false;
-          setItems([]);
-          setHasMore(true);
-          fetchPageRef.current(1, false, term);
-        }
+        setSearchParams((prev) => {
+          const params = new URLSearchParams(prev);
+          params.set("search", term);
+          params.set("page", "1");
+          return params;
+        });
       }, 400);
     },
-    [setSearchParams, mode],
+    [setSearchParams],
   );
 
   const goToPage = useCallback(
     (pageNum: number) => {
-      setSearchTermState("");
-      searchTermRef.current = "";
       setSearchParams((prev) => {
         const params = new URLSearchParams(prev);
         params.set("page", String(pageNum));
         return params;
       });
-      fetchPageRef.current(pageNum, false);
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
     [setSearchParams],
@@ -253,14 +231,18 @@ useEffect(() => {
     return pages;
   }, [totalItems, currentPage, limit]);
 
-  // 👈 Only change: reads rootRef.current so the observer uses the column
-  //    scroll container instead of the viewport. Re-attaches whenever the
-  //    node changes (same as before) — rootRef always has the latest value.
   const lastElementRef = useCallback(
     (node: HTMLDivElement | null) => {
       if (mode !== "infinite") return;
+
       observer.current?.disconnect();
+      observer.current = null;
+      lastNodeRef.current = node;
+
       if (!node) return;
+
+      const rootEl = rootPropRef.current?.current ?? null;
+
       observer.current = new IntersectionObserver(
         (entries) => {
           if (
@@ -268,18 +250,19 @@ useEffect(() => {
             infiniteHasMore.current &&
             !infiniteLoading.current
           ) {
-            fetchPageRef.current(infiniteNextPage.current, true);
+            fetchPageRef.current(
+              infiniteNextPage.current,
+              true,
+              searchTerm,
+            );
           }
         },
-        {
-          root: rootRef.current,   // 👈 column div, not the viewport
-          rootMargin: "100px",
-          threshold: 0,
-        },
+        { root: rootEl, rootMargin: "100px", threshold: 0 },
       );
+
       observer.current.observe(node);
     },
-    [mode], // rootRef is a ref so it doesn't need to be a dep
+    [mode, searchTerm],
   );
 
   const refresh = useCallback(() => {
@@ -289,11 +272,11 @@ useEffect(() => {
       infiniteLoading.current = false;
       setItems([]);
       setHasMore(true);
-      fetchPageRef.current(1, false);
+      fetchPageRef.current(1, false, searchTerm);
     } else {
-      fetchPageRef.current(currentPage, false);
+      fetchPageRef.current(currentPage, false, searchTerm);
     }
-  }, [currentPage, mode]);
+  }, [currentPage, mode, searchTerm]);
 
   return {
     items,

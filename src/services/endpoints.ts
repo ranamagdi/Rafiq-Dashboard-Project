@@ -126,11 +126,18 @@ export const getProjectTasks = (
   status?: StatusVariant,
   limit?: number,
   offset?: number,
+  searchTerm?: string,
 ) => {
+  const hasSearch = !!searchTerm?.trim();
+
   let url = `/rest/v1/project_tasks?project_id=eq.${projectId}`;
 
   if (status) {
     url += `&status=eq.${status}`;
+  }
+
+  if (hasSearch) {
+    url += `&title=ilike.%25${searchTerm}%25`;
   }
 
   if (limit !== undefined) {

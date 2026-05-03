@@ -73,6 +73,7 @@ export function MobileViewTask({ task, onClick }: Props) {
           </Button>
         </div>
       </div>
+      
     </div>
   );
 }

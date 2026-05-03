@@ -1,21 +1,26 @@
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+
+// Components
 import BoardView from "../../../components/tasks/BoardViewTasks";
 import ListView from "../../../components/tasks/ListViewTasks";
 import { MobileViewTask } from "../../../components/tasks/MobileViewTask";
 import Breadcrumb from "../../../components/common/Breadcramb/Breadcrumb";
-import { getProjectTasks } from "../../../services/endpoints";
-import type { Task } from "../../../types/apiTypes";
+import DetailsTask from "../../../components/tasks/DetailsTaskPopup";
+import Pagination from "../../../components/common/Pagination/Pagination";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
-import { usePagination } from "../../../hooks/usePagination";
-import { useNavigate } from "react-router-dom";
-import { ICONS } from "../../../assets/index";
-import DetailsTask from "../../../components/tasks/DetailsTaskPopup";
-import { useAppSelector } from "../../../hooks/reduxHooks";
 import { PlusIcon } from "../../../components/ui/SvgIcons";
-import { useState, useEffect } from "react";
+
+// Hooks & Services
+import { getProjectTasks } from "../../../services/endpoints";
+import { usePagination } from "../../../hooks/usePagination";
+import { useAppSelector } from "../../../hooks/reduxHooks";
 import useIsMobile from "../../../hooks/useIsMobile";
-import Pagination from "../../../components/common/Pagination/Pagination";
+
+// Assets & Types
+import { ICONS } from "../../../assets/index";
+import type { Task } from "../../../types/apiTypes";
 
 export default function Tasks() {
   const { projectId } = useParams();
@@ -24,44 +29,44 @@ export default function Tasks() {
   const { projectTitle } = useAppSelector((s) => s.project);
   const isMobile = useIsMobile();
 
+  // --- State ---
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  // --- URL Helpers ---
   const view = (searchParams.get("view") as "board" | "list") || "board";
   const taskIdFromUrl = searchParams.get("taskId");
   const selectedTask = taskIdFromUrl
     ? { taskId: taskIdFromUrl, projectId: projectId! }
     : null;
 
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  // --- Pagination Hooks ---
 
-  // Mobile — infinite scroll (no root needed, page is the scroll container)
-  const { items: mobileTasks, lastElementRef } = usePagination<Task>({
+  // 1. Mobile Infinite Scroll
+  const {
+    items: mobileTasks,
+    lastElementRef,
+    setSearchTerm: setMobileSearch,
+    loading: mobileLoading,
+  } = usePagination<Task>({
     mode: "infinite",
-    fetchFn: async (limit, offset) => {
-      const res = await getProjectTasks(projectId as string, undefined, limit, offset);
-      const contentRange = res.headers.get("content-range");
-      const total = contentRange
-        ? parseInt(contentRange.split("/")[1], 10)
-        : (res.data?.length ?? 0);
+    fetchFn: async (limit, offset, term) => {
+      const res = await getProjectTasks(
+        projectId!,
+        undefined,
+        limit,
+        offset,
+        term,
+      );
+      const total = parseInt(
+        res.headers.get("content-range")?.split("/")[1] || "0",
+        10,
+      );
       return { data: res.data ?? [], total };
     },
   });
 
-  function openTask(taskId: string) {
-    setSearchParams((prev) => {
-      const params = new URLSearchParams(prev);
-      params.set("taskId", taskId);
-      return params;
-    });
-  }
-
-  function closeTask() {
-    setSearchParams((prev) => {
-      const params = new URLSearchParams(prev);
-      params.delete("taskId");
-      return params;
-    });
-  }
-
-  // Desktop list — paginated
+  // 2. Desktop List Pagination
   const {
     items: paginatedTasks,
     loading: listLoading,
@@ -75,29 +80,27 @@ export default function Tasks() {
     handlePageClick,
     getVisiblePages,
     isOutOfRange,
+    setSearchTerm: setListSearch,
   } = usePagination<Task>({
-    fetchFn: async (limit, offset) => {
-      const res = await getProjectTasks(projectId as string, undefined, limit, offset);
-      const contentRange = res.headers.get("content-range");
-      const total = contentRange
-        ? parseInt(contentRange.split("/")[1], 10)
-        : (res.data?.length ?? 0);
+    fetchFn: async (limit, offset, term) => {
+      const res = await getProjectTasks(
+        projectId!,
+        undefined,
+        limit,
+        offset,
+        term,
+      );
+      const total = parseInt(
+        res.headers.get("content-range")?.split("/")[1] || "0",
+        10,
+      );
       return { data: res.data ?? [], total };
     },
   });
 
-  useEffect(() => {
-    setSearchParams(
-      (prev) => {
-        const params = new URLSearchParams(prev);
-        if (view === "list" && !params.get("page")) params.set("page", "1");
-        if (view === "board") params.delete("page");
-        return params;
-      },
-      { replace: true },
-    );
-  }, [setSearchParams, view]);
+  // --- Effects ---
 
+  // Sync View with URL params
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
     if (!params.get("view")) {
@@ -106,7 +109,34 @@ export default function Tasks() {
     }
   }, [searchParams, setSearchParams]);
 
-  function handleViewChange(newView: "board" | "list") {
+  // Handle Page param for List View
+  useEffect(() => {
+    if (!isMobile && view === "list" && !searchParams.get("page")) {
+      setSearchParams(
+        (prev) => {
+          const p = new URLSearchParams(prev);
+          p.set("page", "1");
+          return p;
+        },
+        { replace: true },
+      );
+    }
+  }, [view, isMobile, searchParams, setSearchParams]);
+
+  // --- Handlers ---
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    // Trigger specific hook searches
+    if (isMobile) {
+      setMobileSearch(value);
+    } else {
+      setListSearch(value);
+    }
+  };
+
+  const handleViewChange = (newView: "board" | "list") => {
     setDropdownOpen(false);
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev);
@@ -115,15 +145,31 @@ export default function Tasks() {
       else params.delete("page");
       return params;
     });
-  }
+  };
 
-  function goToCreateTask() {
+  const openTask = (taskId: string) => {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      params.set("taskId", taskId);
+      return params;
+    });
+  };
+
+  const closeTask = () => {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      params.delete("taskId");
+      return params;
+    });
+  };
+
+  const goToCreateTask = () =>
     navigate(`/dashboard/project/${projectId}/tasks/new`);
-  }
 
+  // --- UI Helpers ---
   const isBoard = view === "board" && !isMobile;
-  const isMobileView = isMobile;
 
+  // Invalid Page Protection
   if (!isMobile && view === "list" && (isInvalidPage || isOutOfRange)) {
     return (
       <div className="p-6 text-center">
@@ -134,12 +180,6 @@ export default function Tasks() {
   }
 
   return (
-    /*
-      Board mode  → h-screen + overflow-hidden: page is locked, zero page scroll.
-                    flex-col so breadcrumb + header take their natural height,
-                    board fills everything below via flex-1.
-      List/mobile → original layout, page scrolls naturally.
-    */
     <div
       className={
         isBoard
@@ -149,14 +189,14 @@ export default function Tasks() {
     >
       <Breadcrumb />
 
-      {/* Header row — flex-shrink-0 keeps it at fixed height in board mode */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4 lg:items-center flex-shrink-0">
+      {/* Header Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4 lg:items-center shrink-0">
         <div>
           <h1 className="text-[28px] font-semibold mt-2 text-[#041B3C]">
             Active Workboard
           </h1>
           <p className="text-sm text-gray-500 hidden sm:block">
-            Curating Project {projectTitle} production pipeline and milestones.
+            Curating Project {projectTitle} production pipeline.
           </p>
         </div>
 
@@ -166,6 +206,8 @@ export default function Tasks() {
             iconPosition="left"
             className="h-12 w-full sm:h-10"
             icon={ICONS.search}
+            value={searchTerm}
+            onChange={handleSearchChange}
           />
 
           <Button className="md:hidden gap-2" onClick={goToCreateTask}>
@@ -174,91 +216,131 @@ export default function Tasks() {
           </Button>
 
           <div className="hidden sm:grid grid-flow-col auto-cols-max items-center gap-3 justify-end">
+            {/* View Switcher Dropdown */}
             <div className="relative">
               <Button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="grid grid-flow-col auto-cols-max items-center gap-2 px-3 h-10 rounded-lg bg-white text-[#041B3C] text-sm font-medium"
+                className="grid grid-flow-col auto-cols-max items-center gap-2 px-3 h-10 rounded-lg bg-white text-[#041B3C] text-sm font-medium border border-gray-200"
               >
                 <img
-                  src={view === "board" ? ICONS.boardViewIcon : ICONS.listViewIcon}
+                  src={
+                    view === "board" ? ICONS.boardViewIcon : ICONS.listViewIcon
+                  }
                   className="w-4 h-4"
+                  alt="view icon"
                 />
-                <span className="text-[14px]">
-                  {view === "board" ? "Board View" : "List View"}
-                </span>
+                <span>{view === "board" ? "Board View" : "List View"}</span>
                 <svg
                   className={`w-4 h-4 ml-1 transition ${dropdownOpen ? "rotate-180" : ""}`}
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2"
                   viewBox="0 0 24 24"
                 >
-                  <path d="M6 9l6 6 6-6" />
+                  <path
+                    d="M6 9l6 6 6-6"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </Button>
 
               {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-md z-50">
+                <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-xl border border-gray-100 z-50 overflow-hidden">
                   <div
                     onClick={() => handleViewChange("board")}
-                    className={`grid grid-flow-col auto-cols-max items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 ${view === "board" ? "bg-gray-100" : ""}`}
+                    className={`flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-gray-50 text-sm ${view === "board" ? "bg-blue-50 text-blue-600" : ""}`}
                   >
-                    <img src={ICONS.boardViewIcon} className="w-4 h-4" />
+                    <img
+                      src={ICONS.boardViewIcon}
+                      className="w-4 h-4"
+                      alt="board"
+                    />
                     Board View
                   </div>
                   <div
                     onClick={() => handleViewChange("list")}
-                    className={`grid grid-flow-col auto-cols-max items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 ${view === "list" ? "bg-gray-100" : ""}`}
+                    className={`flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-gray-50 text-sm ${view === "list" ? "bg-blue-50 text-blue-600" : ""}`}
                   >
-                    <img src={ICONS.listViewIcon} className="w-4 h-4" />
+                    <img
+                      src={ICONS.listViewIcon}
+                      className="w-4 h-4"
+                      alt="list"
+                    />
                     List View
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="h-10 w-17 place-items-center rounded-lg bg-(--color-surface-highest) grid">
-              <img src={ICONS.menu} width={18} height={12} />
+            <div className="h-10 w-10 place-items-center rounded-lg bg-gray-100 grid cursor-pointer hover:bg-gray-200">
+              <img src={ICONS.menu} width={18} height={12} alt="menu" />
             </div>
           </div>
         </div>
       </div>
 
-      {/*
-        Board mode:  flex-1 + min-h-0 fills all space below the header.
-                     overflow-hidden prevents any bleed outside this box.
-                     BoardViewTasks gets h-full and handles the rest.
-        List/mobile: plain unstyled div, page scrolls naturally.
-      */}
-      <div className={isBoard ? "flex-1 min-h-0 overflow-hidden" : ""}>
-        {isMobileView ? (
-          <div className="space-y-2">
-            {mobileTasks.map((task, index) => {
-              const isLast = mobileTasks.length === index + 1;
-              return (
-                <div key={task.id} ref={isLast ? lastElementRef : null}>
-                  <MobileViewTask
-                    task={task}
-                    onClick={(taskId) => openTask(taskId)}
-                  />
-                </div>
-              );
-            })}
+      <div className={isBoard ? "flex-1 min-h-0 overflow-hidden" : "pb-10"}>
+        {isMobile ? (
+          <div className="flex flex-col gap-3">
+          
+            {mobileLoading && mobileTasks.length === 0 ? (
+              <div className="space-y-2 px-4 py-2">
+                <div className="h-16 bg-gray-100 animate-pulse rounded" />
+                <div className="h-16 bg-gray-100 animate-pulse rounded" />
+                <div className="h-16 bg-gray-100 animate-pulse rounded" />
+              </div>
+            ) : mobileTasks.length === 0 ? (
+              
+              <div className="flex flex-col items-center justify-center py-10 text-gray-400 text-sm">
+                <span className="font-medium">No tasks found</span>
+                {searchTerm && (
+                  <span className="text-xs mt-1">
+                    Try adjusting your search
+                  </span>
+                )}
+              </div>
+            ) : (
+                    <>
+                {mobileTasks.map((task, index) => (
+                  <div
+                    key={task.id}
+                    ref={
+                      mobileTasks.length === index + 1 ? lastElementRef : null
+                    }
+                  >
+                    <MobileViewTask
+                      task={task}
+                      onClick={() => openTask(task.id)}
+                    />
+                  </div>
+                ))}
+
+            
+                {mobileLoading && (
+                  <p className="text-center py-4 text-sm text-gray-400 animate-pulse">
+                    Loading more tasks...
+                  </p>
+                )}
+              </>
+            )}
           </div>
         ) : isBoard ? (
           <BoardView
             projectId={projectId!}
-            onTaskClick={(taskId) => openTask(taskId)}
+            onTaskClick={openTask}
+            searchTerm={searchTerm}
           />
         ) : (
-          <>
-            <ListView
-              tasks={paginatedTasks}
-              loading={listLoading}
-              error={listError?.message ?? null}
-              onRowClick={(taskId) => openTask(taskId)}
-              pagination={
-                !isMobile && !listLoading && paginatedTasks.length > 0 ? (
+          <ListView
+            tasks={paginatedTasks}
+            loading={listLoading}
+            error={listError?.message ?? null}
+            onRowClick={openTask}
+            pagination={
+              !listLoading &&
+              paginatedTasks.length > 0 && (
+                <div className="mt-8">
                   <Pagination
                     currentPage={currentPage}
                     totalItems={totalItems}
@@ -272,10 +354,10 @@ export default function Tasks() {
                     handleNextPage={handleNextPage}
                     handlePageClick={handlePageClick}
                   />
-                ) : null
-              }
-            />
-          </>
+                </div>
+              )
+            }
+          />
         )}
       </div>
 
