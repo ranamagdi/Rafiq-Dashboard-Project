@@ -284,6 +284,8 @@ export default function Tasks() {
 
       {selectedTask && (
         <DetailsTask
+         key={selectedTask.taskId}  
+           isOpen={true}
           taskId={selectedTask.taskId}
           projectId={selectedTask.projectId}
           onClose={closeTask}
