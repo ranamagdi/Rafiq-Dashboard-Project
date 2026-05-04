@@ -168,9 +168,10 @@ export default function EpicTasksSection({
         </ul>
       )}
 
-      {/* Task Detail Popup */}
+
       {selectedTaskId && (
         <DetailsTask
+         isOpen={true}
           projectId={projectId}
           taskId={selectedTaskId}
           onClose={() => setSelectedTaskId(null)}

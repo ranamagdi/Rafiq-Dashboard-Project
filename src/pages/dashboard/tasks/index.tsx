@@ -1,9 +1,12 @@
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Select, { type SingleValue } from "react-select";
-import {type  ViewOption,VIEW_OPTIONS } from "../../../components/utils/constants";
+import {
+  type ViewOption,
+  VIEW_OPTIONS,
+} from "../../../components/utils/constants";
 import { ViewOptionLabel } from "../../../components/tasks/ViewOptionLabel";
-import {viewSelectStyles} from '../../../components/tasks/CustomSelectViews'
+import { viewSelectStyles } from "../../../components/tasks/CustomSelectViews";
 import BoardView from "../../../components/tasks/BoardViewTasks";
 import ListView from "../../../components/tasks/ListViewTasks";
 import { MobileViewTask } from "../../../components/tasks/MobileViewTask";
@@ -22,7 +25,6 @@ import useIsMobile from "../../../hooks/useIsMobile";
 import { ICONS } from "../../../assets/index";
 import type { Task } from "../../../types/apiTypes";
 
-
 export default function Tasks() {
   const { projectId } = useParams();
   const navigate = useNavigate();
@@ -33,13 +35,13 @@ export default function Tasks() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const view = (searchParams.get("view") as "board" | "list") || "board";
-  const selectedViewOption = VIEW_OPTIONS.find((o) => o.value === view) ?? VIEW_OPTIONS[0];
+  const selectedViewOption =
+    VIEW_OPTIONS.find((o) => o.value === view) ?? VIEW_OPTIONS[0];
 
   const taskIdFromUrl = searchParams.get("taskId");
   const selectedTask = taskIdFromUrl
     ? { taskId: taskIdFromUrl, projectId: projectId! }
     : null;
-
 
   const {
     items: mobileTasks,
@@ -49,7 +51,13 @@ export default function Tasks() {
   } = usePagination<Task>({
     mode: "infinite",
     fetchFn: async (limit, offset, term) => {
-      const res = await getProjectTasks(projectId!, undefined, limit, offset, term);
+      const res = await getProjectTasks(
+        projectId!,
+        undefined,
+        limit,
+        offset,
+        term,
+      );
       const total = parseInt(
         res.headers.get("content-range")?.split("/")[1] || "0",
         10,
@@ -74,7 +82,13 @@ export default function Tasks() {
     setSearchTerm: setListSearch,
   } = usePagination<Task>({
     fetchFn: async (limit, offset, term) => {
-      const res = await getProjectTasks(projectId!, undefined, limit, offset, term);
+      const res = await getProjectTasks(
+        projectId!,
+        undefined,
+        limit,
+        offset,
+        term,
+      );
       const total = parseInt(
         res.headers.get("content-range")?.split("/")[1] || "0",
         10,
@@ -82,8 +96,6 @@ export default function Tasks() {
       return { data: res.data ?? [], total };
     },
   });
-
-
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
@@ -136,13 +148,19 @@ export default function Tasks() {
       return params;
     });
   };
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  const forceRefresh = () => {
+    setRefreshTrigger((prev) => prev + 1);
+  };
   const closeTask = () => {
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev);
       params.delete("taskId");
       return params;
     });
+
+    forceRefresh();
   };
 
   const isBoard = view === "board" && !isMobile;
@@ -186,13 +204,17 @@ export default function Tasks() {
             onChange={handleSearchChange}
           />
 
-          <Button className="md:hidden gap-2" onClick={() => navigate(`/dashboard/project/${projectId}/tasks/new`)}>
+          <Button
+            className="md:hidden gap-2"
+            onClick={() =>
+              navigate(`/dashboard/project/${projectId}/tasks/new`)
+            }
+          >
             <PlusIcon />
             Create New Task
           </Button>
 
           <div className="hidden sm:grid grid-flow-col auto-cols-max items-center gap-3 justify-end">
-         
             <Select<ViewOption, false>
               options={VIEW_OPTIONS}
               value={selectedViewOption}
@@ -226,7 +248,9 @@ export default function Tasks() {
               <div className="flex flex-col items-center justify-center py-10 text-gray-400 text-sm">
                 <span className="font-medium">No tasks found</span>
                 {searchTerm && (
-                  <span className="text-xs mt-1">Try adjusting your search</span>
+                  <span className="text-xs mt-1">
+                    Try adjusting your search
+                  </span>
                 )}
               </div>
             ) : (
@@ -234,9 +258,14 @@ export default function Tasks() {
                 {mobileTasks.map((task, index) => (
                   <div
                     key={task.id}
-                    ref={mobileTasks.length === index + 1 ? lastElementRef : null}
+                    ref={
+                      mobileTasks.length === index + 1 ? lastElementRef : null
+                    }
                   >
-                    <MobileViewTask task={task} onClick={() => openTask(task.id)} />
+                    <MobileViewTask
+                      task={task}
+                      onClick={() => openTask(task.id)}
+                    />
                   </div>
                 ))}
                 {mobileLoading && (
@@ -249,18 +278,21 @@ export default function Tasks() {
           </div>
         ) : isBoard ? (
           <BoardView
+            key={`board-${refreshTrigger}`}
             projectId={projectId!}
             onTaskClick={openTask}
             searchTerm={searchTerm}
           />
         ) : (
           <ListView
+            key={`list-view-${refreshTrigger}-${currentPage}`}
             tasks={paginatedTasks}
             loading={listLoading}
             error={listError?.message ?? null}
             onRowClick={openTask}
             pagination={
-              !listLoading && paginatedTasks.length > 0 && (
+              !listLoading &&
+              paginatedTasks.length > 0 && (
                 <div className="mt-8">
                   <Pagination
                     currentPage={currentPage}
@@ -284,8 +316,8 @@ export default function Tasks() {
 
       {selectedTask && (
         <DetailsTask
-         key={selectedTask.taskId}  
-           isOpen={true}
+          key={selectedTask.taskId}
+          isOpen={true}
           taskId={selectedTask.taskId}
           projectId={selectedTask.projectId}
           onClose={closeTask}
