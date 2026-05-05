@@ -37,10 +37,10 @@ const Login = () => {
   } = useForm<FormData>({
     mode: "onChange",
     resolver: zodResolver(loginSchema),
-      defaultValues: {
-    email: import.meta.env.DEV ? "doha@gmail.com" : "",
-    password: import.meta.env.DEV ? "Password123!" : "",
-  },
+   defaultValues: {
+  email: import.meta.env.MODE === "development" ? "doha@gmail.com" : "",
+  password: import.meta.env.MODE === "development" ? "Password123!" : "",
+}
   });
 
 const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
