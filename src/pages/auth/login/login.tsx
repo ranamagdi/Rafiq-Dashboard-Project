@@ -12,7 +12,6 @@ import { useState } from "react";
 import { useCookie } from "../../../hooks/useCookie";
 import { useAppDispatch } from "../../../hooks/reduxHooks";
 
-
 const Login = () => {
   const { setCookie } = useCookie();
   const navigate = useNavigate();
@@ -29,7 +28,7 @@ const Login = () => {
   });
 
   type FormData = z.infer<typeof loginSchema>;
-
+  const isDev = import.meta.env.MODE === "development";
   const {
     register,
     handleSubmit,
@@ -37,44 +36,43 @@ const Login = () => {
   } = useForm<FormData>({
     mode: "onChange",
     resolver: zodResolver(loginSchema),
-   defaultValues: {
-  email: import.meta.env.MODE === "development" ? "doha@gmail.com" : "",
-  password: import.meta.env.MODE === "development" ? "Password123!" : "",
-}
+    defaultValues: {
+      email: isDev ? "doha@gmail.com" : "",
+      password: isDev ? "Password123!" : "",
+    },
   });
 
-const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
-  try {
-    setErrorMessage(null);
+  const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
+    try {
+      setErrorMessage(null);
 
-    const response = await login(data.email, data.password);
+      const response = await login(data.email, data.password);
 
-    const { access_token, refresh_token, expires_at } = response.data;
+      const { access_token, refresh_token, expires_at } = response.data;
 
- 
-    setCookie("access_token", access_token, {
-      expiresAt: expires_at,
-    });
-
-  
-    if (remember) {
-      setCookie("refresh_token", refresh_token, {
-        days: 30, 
+      setCookie("access_token", access_token, {
+        expiresAt: expires_at,
       });
-    }
 
-    dispatch(fetchUser());
-    navigate("/dashboard");
-  } catch (error) {
-    setErrorMessage(
-      error instanceof Error ? error.message : "An error occurred during sign in"
-    );
-  }
-};
+      if (remember) {
+        setCookie("refresh_token", refresh_token, {
+          days: 30,
+        });
+      }
+
+      dispatch(fetchUser());
+      navigate("/dashboard");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "An error occurred during sign in",
+      );
+    }
+  };
 
   return (
     <div className="h-screen flex items-center justify-center">
-  
       <div
         className="
           flex flex-col
@@ -85,7 +83,6 @@ const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
           max-md:max-w-full max-md:px-2.5 max-md:py-2.5
         "
       >
-  
         <h3
           className="
             text-center text-[30px] font-(--headline-lg-weight)
@@ -94,7 +91,6 @@ const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
         >
           Welcome Back
         </h3>
-
 
         <p
           className="
@@ -118,16 +114,14 @@ const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
           </div>
         )}
 
-      
         <form
           className="
             pt-10 pb-4 flex flex-col justify-start items-start text-left
             max-md:px-5
           "
           onSubmit={handleSubmit(handleSubmitForm)}
-        > 
+        >
           <div className="mb-5 w-full">
-         
             <label
               className={`
                 block text-(length:--label-sm-size) font-(--label-sm-weight)
@@ -161,7 +155,7 @@ const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
               >
                 password
               </label>
-          
+
               <span
                 className="
                   hidden max-md:block cursor-pointer
@@ -187,7 +181,6 @@ const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
             )}
           </div>
 
-   
           <div className="flex items-center justify-between mt-2 w-full">
             <label className="flex items-center gap-2 cursor-pointer select-none mt-3">
               <input
@@ -207,7 +200,7 @@ const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
                   <span className="text-[14px] font-bold leading-none">✓</span>
                 )}
               </div>
-        
+
               <p
                 className="
                   text-(length:--body-md-size)! font-(--title-md-weight)
@@ -218,7 +211,6 @@ const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
               </p>
             </label>
 
-         
             <span
               className="
                 hidden md:block cursor-pointer
@@ -239,7 +231,6 @@ const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
             {isSubmitting ? "Logging in..." : "Log In"}
           </Button>
 
-         
           <Button
             className="flex md:hidden items-center gap-2 justify-center  w-full mt-4 "
             type="submit"
