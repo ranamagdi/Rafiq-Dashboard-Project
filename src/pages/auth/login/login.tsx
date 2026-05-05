@@ -37,9 +37,10 @@ const Login = () => {
     mode: "onChange",
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: isDev ? "doha@gmail.com" : "",
-      password: isDev ? "Password123!" : "",
+      email: isDev ? "" : "",
+      password: isDev ? "" : "",
     },
+    //doha@gmail.com,Password123!
   });
 
   const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
