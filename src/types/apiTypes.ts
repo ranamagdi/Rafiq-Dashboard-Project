@@ -54,11 +54,28 @@ export type ApiMember = {
     email?: string;
   };
 };
+/**
+ * Lifted drag state shared across all columns.
+ * movedIn:  tasks injected into a column via drag (keyed by target status)
+ * movedOut: task ids hidden from their original fetched column
+ */
+
+export type DragState = {
+  movedIn: Record<string, Task[]>;
+  movedOut: Set<string>;
+};
+
 export type ApiResponse<T = unknown> = {
   data: T;
   headers: Headers;
 };
-
+export type Column = {
+  id: string;
+  label: string;
+  status: StatusVariant;
+  dotColor: string;
+  badgeClass: string;
+};
 export type ApiError = Error & {
     message?: string;
     

@@ -1,78 +1,22 @@
-import { useRef, useEffect } from "react";
+import {  useState, useCallback } from "react";
 import BoardViewCard from "./BoardViewCard";
-import { PlusIcon, PlusRoundedIcon } from "../ui/SvgIcons";
-import type { StatusVariant, Task } from "../../types/apiTypes";
-import Button from "../ui/Button";
-import { useNavigate } from "react-router-dom";
-import { usePagination } from "../../hooks/usePagination";
-import { getProjectTasks } from "../../services/endpoints";
+import type { Task, StatusVariant } from "../../types/apiTypes";
+import BoardColumn from "./BoardColumn";
+import { updateTask } from "../../services/endpoints";
+import { COLUMNS } from "../utils/constants";
+import toast from "react-hot-toast";
+import type {DragState} from '../../types/apiTypes'
 
-type Column = {
-  id: string;
-  label: string;
-  status: StatusVariant;
-  dotColor: string;
-  badgeClass: string;
-};
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
 
-const COLUMNS: Column[] = [
-  {
-    id: "todo",
-    label: "TO DO",
-    status: "TO_DO",
-    dotColor: "#6b7280",
-    badgeClass: "bg-gray-100 text-gray-600",
-  },
-  {
-    id: "in_progress",
-    label: "IN PROGRESS",
-    status: "IN_PROGRESS",
-    dotColor: "#3b82f6",
-    badgeClass: "bg-blue-100 text-blue-700",
-  },
-  {
-    id: "in_review",
-    label: "IN REVIEW",
-    status: "IN_REVIEW",
-    dotColor: "#8b5cf6",
-    badgeClass: "bg-violet-100 text-violet-700",
-  },
-  {
-    id: "ready_qa",
-    label: "READY FOR QA",
-    status: "READY_FOR_QA",
-    dotColor: "#f59e0b",
-    badgeClass: "bg-amber-100 text-amber-700",
-  },
-  {
-    id: "blocked",
-    label: "BLOCKED",
-    status: "BLOCKED",
-    dotColor: "#ef4444",
-    badgeClass: "bg-red-100 text-red-700",
-  },
-  {
-    id: "ready_prod",
-    label: "READY FOR PROD",
-    status: "READY_FOR_PRODUCTION",
-    dotColor: "#06b6d4",
-    badgeClass: "bg-cyan-100 text-cyan-700",
-  },
-  {
-    id: "reopened",
-    label: "REOPENED",
-    status: "REOPENED",
-    dotColor: "#f97316",
-    badgeClass: "bg-orange-100 text-orange-700",
-  },
-  {
-    id: "done",
-    label: "DONE",
-    status: "DONE",
-    dotColor: "#22c55e",
-    badgeClass: "bg-green-100 text-green-700",
-  },
-];
 
 type BoardViewTasksProps = {
   projectId: string;
@@ -81,170 +25,144 @@ type BoardViewTasksProps = {
   onTaskClick: (taskId: string, projectId: string) => void;
 };
 
-function BoardColumn({
-  col,
-  projectId,
-  onClick,
-  searchTerm = "",
-}: {
-  col: Column;
-  projectId: string;
-  searchTerm?: string;
-  onClick: (taskId: string, projectId: string) => void;
-}) {
-  const navigate = useNavigate();
-  // REMOVE rootReady state and its useEffect entirely
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const {
-    items,
-    loading,
-    hasMore,
-    lastElementRef,
-    setSearchTerm: setColSearch,
-  } = usePagination<Task>({
-    mode: "infinite",
-    root: scrollRef, // always pass it — .current is read lazily at attach time
-    fetchFn: async (limit, offset, term) => {
-      const res = await getProjectTasks(
-        projectId,
-        col.status,
-        limit,
-        offset,
-        term,
-      );
-      const contentRange = res.headers.get("content-range");
-      const total = contentRange
-        ? parseInt(contentRange.split("/")[1], 10)
-        : (res.data?.length ?? 0);
-      return { data: res.data ?? [], total };
-    },
-  });
-
-  const prevSearchTerm = useRef<string | null>(null);
-  useEffect(() => {
-    if (prevSearchTerm.current === null) {
-      prevSearchTerm.current = searchTerm;
-      return;
-    }
-    prevSearchTerm.current = searchTerm;
-    setColSearch(searchTerm);
-  }, [searchTerm, setColSearch]);
-  return (
-    <div className="flex flex-col min-w-62.5 h-full">
-      <div className="flex items-center justify-between mb-3 shrink-0">
-        <div className="flex items-center gap-2">
-          <span
-            className="w-2 h-2 rounded-full"
-            style={{ background: col.dotColor }}
-          />
-          <span className="text-[11px] font-bold tracking-widest uppercase text-gray-500">
-            {col.label}
-          </span>
-          <span
-            className={`text-[11px] font-semibold px-2 py-0.5 rounded-sm ${col.badgeClass}`}
-          >
-            {loading && items.length === 0 ? "..." : items.length}
-          </span>
-        </div>
-        <Button
-          className="bg-transparent text-gray-400 shadow-transparent px-0"
-          onClick={() =>
-            navigate(
-              `/dashboard/project/${projectId}/tasks/new?status=${col.status}`,
-            )
-          }
-        >
-          <PlusIcon />
-        </Button>
-      </div>
-
-      <Button
-        onClick={() =>
-          navigate(
-            `/dashboard/project/${projectId}/tasks/new?status=${col.status}`,
-          )
-        }
-        className="shrink-0 bg-transparent gap-2 w-full border-2 border-dashed border-gray-200 px-3 py-3 text-gray-500 hover:border-gray-400 transition mb-3"
-      >
-        <PlusRoundedIcon />
-        ADD NEW TASK
-      </Button>
-
-      <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 pr-1">
-        {loading && items.length === 0 ? (
-          <div className="space-y-2">
-            <div className="h-12 bg-(--color-surface-highest) animate-pulse rounded" />
-            {[...Array(3)].map((_, i) => (
-              <div
-                key={i}
-                className="h-20 bg-(--color-surface-highest) animate-pulse rounded"
-              />
-            ))}
-          </div>
-        ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 text-gray-400 text-sm">
-            <span className="font-medium">No tasks found</span>
-            {searchTerm && (
-              <span className="text-xs mt-1">Try adjusting your search</span>
-            )}
-          </div>
-        ) : (
-          <>
-            {items.map((task, index) => {
-              const isLast = index === items.length - 1;
-              return (
-                <div
-                  key={task.id}
-                  className="mb-2.5"
-                  ref={isLast ? lastElementRef : null}
-                >
-                  <BoardViewCard
-                    title={task.title}
-                    date={task.due_date ?? undefined}
-                    isDelayed={
-                      task.status === "BLOCKED" || task.status === "REOPENED"
-                    }
-                    userName={task.assignee?.name ?? ""}
-                    taskId={task.id}
-                    projectId={projectId}
-                    onClick={onClick}
-                  />
-                </div>
-              );
-            })}
-
-            {loading && hasMore && (
-              <div className="h-20 bg-(--color-surface-highest) animate-pulse rounded mb-2.5" />
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default function BoardViewTasks({
   projectId,
   onTaskClick,
   searchTerm = "",
 }: BoardViewTasksProps) {
+  const [dragState, setDragState] = useState<DragState>({
+    movedIn: {},
+    movedOut: new Set(),
+  });
+
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  );
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const task = event.active.data.current?.task as Task | undefined;
+    if (task) setActiveTask(task);
+  }, []);
+
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      setActiveTask(null);
+
+      const { active, over } = event;
+      if (!over) return;
+
+      const task = active.data.current?.task as Task | undefined;
+      if (!task) return;
+
+      const newStatus = over.id as StatusVariant;
+
+      // Resolve where this task currently lives (may have been moved before)
+      const currentStatus =
+        Object.entries(dragState.movedIn).find(([, tasks]) =>
+          tasks.some((t) => t.id === task.id),
+        )?.[0] ?? task.status;
+
+      if (newStatus === currentStatus) return;
+
+      // ── Optimistic update ──────────────────────────────────────────────────
+      setDragState((prev) => {
+        // Strip task from any movedIn bucket it currently sits in
+        const nextMovedIn: Record<string, Task[]> = {};
+        for (const [status, tasks] of Object.entries(prev.movedIn)) {
+          const filtered = tasks.filter((t) => t.id !== task.id);
+          if (filtered.length > 0) nextMovedIn[status] = filtered;
+        }
+
+        // Inject into the target column with the updated status
+        const updatedTask: Task = { ...task, status: newStatus as Task["status"] };
+        nextMovedIn[newStatus] = [updatedTask, ...(nextMovedIn[newStatus] ?? [])];
+
+        // Hide from original fetched column
+        const nextMovedOut = new Set(prev.movedOut);
+        nextMovedOut.add(task.id);
+
+        return { movedIn: nextMovedIn, movedOut: nextMovedOut };
+      });
+
+     
+      try {
+        await updateTask(task.id, { status: newStatus });
+      } catch {
+  
+        setDragState((prev) => {
+          const nextMovedIn: Record<string, Task[]> = {};
+          for (const [status, tasks] of Object.entries(prev.movedIn)) {
+            const filtered = tasks.filter((t) => t.id !== task.id);
+            if (filtered.length > 0) nextMovedIn[status] = filtered;
+          }
+
+          // Re-inject at its previous position only if it had been moved before
+          if (currentStatus !== task.status) {
+            const revertedTask: Task = { ...task, status: currentStatus as Task["status"] };
+            nextMovedIn[currentStatus] = [
+              revertedTask,
+              ...(nextMovedIn[currentStatus] ?? []),
+            ];
+          }
+
+          const nextMovedOut = new Set(prev.movedOut);
+          // Un-hide from original column if this was its first move
+          if (currentStatus === task.status) nextMovedOut.delete(task.id);
+
+          return { movedIn: nextMovedIn, movedOut: nextMovedOut };
+        });
+
+        toast.error(`Failed to move task ${task.id} to ${newStatus}. Reverted.`);
+        
+      }
+    },
+    [dragState.movedIn],
+  );
+
   return (
-    // h-full inherits bounded height passed down from Tasks.tsx
-    // overflow-x-auto: horizontal scroll to reach all 8 columns
-    // overflow-y-hidden: no page-level vertical scroll — only columns scroll
-    <div className="h-full overflow-x-auto overflow-y-hidden">
-      <div className="flex gap-6 min-w-max h-full">
-        {COLUMNS.map((col) => (
-          <BoardColumn
-            key={col.id}
-            col={col}
-            projectId={projectId}
-            onClick={onTaskClick}
-            searchTerm={searchTerm}
-          />
-        ))}
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="h-full overflow-x-auto overflow-y-hidden">
+        <div className="flex gap-6 min-w-max h-full">
+          {COLUMNS.map((col) => (
+            <BoardColumn
+              key={col.id}
+              col={col}
+              projectId={projectId}
+              onClick={onTaskClick}
+              searchTerm={searchTerm}
+              dragState={dragState}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+
+      {/* Floating ghost card */}
+      <DragOverlay dropAnimation={{ duration: 180, easing: "ease" }}>
+        {activeTask ? (
+          <div style={{ transform: "rotate(2deg)", opacity: 0.92 }}>
+            <BoardViewCard
+              title={activeTask.title}
+              date={activeTask.due_date ?? undefined}
+              isDelayed={
+                activeTask.status === "BLOCKED" ||
+                activeTask.status === "REOPENED"
+              }
+              userName={activeTask.assignee?.name ?? ""}
+              taskId={activeTask.id}
+              projectId={projectId}
+              onClick={() => {}}
+            />
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }
