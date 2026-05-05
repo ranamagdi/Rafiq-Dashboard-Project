@@ -43,34 +43,44 @@ const Login = () => {
    
   });
 
-  const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
-    try {
-      setErrorMessage(null);
+ const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
+  try {
+    setErrorMessage(null);
 
-      const response = await login(data.email, data.password);
+    const response = await login(data.email, data.password);
 
-      const { access_token, refresh_token, expires_at } = response.data;
+    const { access_token, refresh_token, expires_at } = response.data;
 
-      setCookie("access_token", access_token, {
-        expiresAt: expires_at,
+    setCookie("access_token", access_token, {
+      expiresAt: expires_at,
+    });
+
+    if (remember) {
+      setCookie("refresh_token", refresh_token, {
+        days: 30,
       });
-
-      if (remember) {
-        setCookie("refresh_token", refresh_token, {
-          days: 30,
-        });
-      }
-
-      dispatch(fetchUser());
-      navigate("/dashboard");
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "An error occurred during sign in",
-      );
     }
-  };
+
+    dispatch(fetchUser());
+
+    // ✅ IMPORTANT: handle redirect after login
+    const redirectTo = sessionStorage.getItem("redirect_after_login");
+
+    if (redirectTo) {
+      sessionStorage.removeItem("redirect_after_login");
+      navigate(redirectTo, { replace: true });
+      return;
+    }
+
+    navigate("/dashboard");
+  } catch (error) {
+    setErrorMessage(
+      error instanceof Error
+        ? error.message
+        : "An error occurred during sign in"
+    );
+  }
+};
 
   return (
     <div className="h-screen flex items-center justify-center">

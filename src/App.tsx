@@ -1,6 +1,5 @@
 import "./App.css";
 import AppRoutes from "./routes";
-import Header from "./components/common/Header/Header";
 import { useEffect, useRef } from "react";
 import { useAppDispatch } from "./hooks/reduxHooks";
 import { fetchUser } from "./store/slices/user/userSlice";
@@ -25,7 +24,7 @@ function App() {
 
   return (
     <div className="App">
-      <Header />
+    
       <AppRoutes />
     </div>
   );

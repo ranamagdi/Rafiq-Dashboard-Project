@@ -201,7 +201,7 @@ export default function Members() {
                 </span>
                 {member.role !== "OWNER" && (
                   <button
-                    className="p-1 rounded hover:bg-[#E5E7EB] transition-colors cursor-pointer"
+                    className="p-1 rounded hover:bg-[#E5E7EB] flex justify-center transition-colors cursor-pointer"
                     aria-label="More actions"
                   >
                    <RoleIcon/>

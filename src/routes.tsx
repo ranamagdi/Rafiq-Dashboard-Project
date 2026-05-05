@@ -13,7 +13,8 @@ import Epics from "./pages/dashboard/epics";
 import EpicCreate from "./pages/dashboard/epics/epic-create";
 import Members from "./pages/dashboard/members";
 import TaskCreate from "./pages/dashboard/tasks/task-create";
-import Tasks from './pages/dashboard/tasks/index'
+import Tasks from "./pages/dashboard/tasks/index";
+import AcceptInvetation from "./pages/AcceptInvetation";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -24,6 +25,7 @@ const AppRoutes = () => {
         <Route path="/login" element={<Login />} />
       </Route>
       <Route path="/" element={<AuthCallback />} />
+      <Route path="/invite" element={<AcceptInvetation />} />
 
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />}>
@@ -35,7 +37,7 @@ const AppRoutes = () => {
           <Route path="project/:projectId/epic/add" element={<EpicCreate />} />
           <Route path="project/:projectId/members" element={<Members />} />
           <Route path="project/:projectId/tasks/new" element={<TaskCreate />} />
-           <Route path="project/:projectId/tasks/" element={<Tasks />} />
+          <Route path="project/:projectId/tasks/" element={<Tasks />} />
         </Route>
       </Route>
     </Routes>

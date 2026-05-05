@@ -47,6 +47,7 @@ export const getUser = () => {
   return api.get<ApiUser>("/auth/v1/user");
 };
 
+
 // REFRESH TOKEN
 export const refreshToken = (refresh_token: string) => {
   return api.post("/auth/v1/token?grant_type=refresh_token", {

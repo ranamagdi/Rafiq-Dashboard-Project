@@ -1,11 +1,21 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useCookie } from "../../hooks/useCookie";
+import Header from "../common/Header/Header";
 
 const PublicRoute = () => {
   const { getCookie } = useCookie();
   const token = getCookie("access_token");
 
-  return token ? <Navigate to="/dashboard" replace /> : <Outlet />;
+  if (token) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return (
+    <>
+      <Header />
+      <Outlet />
+    </>
+  );
 };
 
 export default PublicRoute;

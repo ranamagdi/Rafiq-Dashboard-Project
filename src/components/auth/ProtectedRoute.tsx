@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useCookie } from "../../hooks/useCookie";
+import Header from "../common/Header/Header";
 
 const ProtectedRoute = () => {
   const { getCookie } = useCookie();
@@ -9,7 +10,12 @@ const ProtectedRoute = () => {
     return <Navigate to="/login" replace />;
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <Header />
+      <Outlet />
+    </>
+  );
 };
 
 export default ProtectedRoute;
