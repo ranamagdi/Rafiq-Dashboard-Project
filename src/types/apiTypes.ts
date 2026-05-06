@@ -4,7 +4,18 @@ export interface Project {
   name: string;
   description: string;
 }
-
+export interface SelectOption {
+  value: string;
+  label: string;
+}
+export type DateRange = {
+  start: Date | null;
+  end: Date | null;
+};
+export interface StatusOption {
+  value: StatusVariant | "all";
+  label: string;
+}
 export interface Epic {
   id?: string;
   title: string;
@@ -43,6 +54,20 @@ assignee_id:string | null;
     name: string;
   };
 }
+
+export type CalendarStatsResponse = {
+  daily: { day: string; statuses: Record<string, number> }[];
+  totals: Record<string, number>;
+  total_tasks: number;
+  done_tasks: number;
+  overdue_tasks: number;
+};
+
+export type ProjectStatItem = {
+  project_id: string;
+  project_name: string;
+  tasks_count: number;
+};
 export type ApiMember = {
   member_id: string;
   project_id: string;
@@ -54,11 +79,28 @@ export type ApiMember = {
     email?: string;
   };
 };
+/**
+ * Lifted drag state shared across all columns.
+ * movedIn:  tasks injected into a column via drag (keyed by target status)
+ * movedOut: task ids hidden from their original fetched column
+ */
+
+export type DragState = {
+  movedIn: Record<string, Task[]>;
+  movedOut: Set<string>;
+};
+
 export type ApiResponse<T = unknown> = {
   data: T;
   headers: Headers;
 };
-
+export type Column = {
+  id: string;
+  label: string;
+  status: StatusVariant;
+  dotColor: string;
+  badgeClass: string;
+};
 export type ApiError = Error & {
     message?: string;
     
