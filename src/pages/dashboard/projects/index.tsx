@@ -50,7 +50,7 @@ export default function Projects() {
     },
   });
 
-  // ─── Invalid page param → empty state ────────────────────────────────────
+
   if (isInvalidPage || isOutOfRange) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-9">
@@ -66,7 +66,6 @@ export default function Projects() {
   }
 
 
-  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-9">
       {!error && (projects.length !== 0 || loading) && (

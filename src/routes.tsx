@@ -15,6 +15,7 @@ import Members from "./pages/dashboard/members";
 import TaskCreate from "./pages/dashboard/tasks/task-create";
 import Tasks from "./pages/dashboard/tasks/index";
 import AcceptInvetation from "./pages/AcceptInvetation";
+import Statistics from "./pages/dashboard/statistics";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -38,6 +39,7 @@ const AppRoutes = () => {
           <Route path="project/:projectId/members" element={<Members />} />
           <Route path="project/:projectId/tasks/new" element={<TaskCreate />} />
           <Route path="project/:projectId/tasks/" element={<Tasks />} />
+           <Route path="my-statistics" element={<Statistics />} />
         </Route>
       </Route>
     </Routes>

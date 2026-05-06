@@ -47,7 +47,6 @@ export const getUser = () => {
   return api.get<ApiUser>("/auth/v1/user");
 };
 
-
 // REFRESH TOKEN
 export const refreshToken = (refresh_token: string) => {
   return api.post("/auth/v1/token?grant_type=refresh_token", {
@@ -59,8 +58,20 @@ export const createProject = (data: { name: string; description: string }) => {
   return api.post("/rest/v1/projects", data);
 };
 
-export const getProjects = (limit: number, offset: number) => {
-  return api.get(`/rest/v1/rpc/get_projects?limit=${limit}&offset=${offset}`, {
+export const getProjects = (limit?: number, offset?: number) => {
+  const params = new URLSearchParams();
+
+  if (limit !== undefined) {
+    params.append("limit", limit.toString());
+  }
+
+  if (offset !== undefined) {
+    params.append("offset", offset.toString());
+  }
+
+  const query = params.toString();
+
+  return api.get(`/rest/v1/rpc/get_projects${query ? `?${query}` : ""}`, {
     headers: { Prefer: "count=exact" },
   });
 };
@@ -78,6 +89,23 @@ export const createEpic = (data: Partial<Epic>) => {
 
 export const deleteEpic = (id: string) => {
   return api.delete(`/rest/v1/epics?id=eq.${id}`);
+};
+// TASKS CALENDAR STATS
+export const getTasksCalendarStats = (data: {
+  p_start_date: string;
+  p_end_date: string;
+  p_project_id?: string | null;
+  p_status?: string | null;
+}) => {
+  return api.post("/rest/v1/rpc/get_tasks_calendar_stats", data);
+};
+
+// TASKS COUNT PER PROJECT
+export const getTasksCountPerProject = (data: {
+  p_start_date: string;
+  p_end_date: string;
+}) => {
+  return api.post("/rest/v1/rpc/get_tasks_count_per_project", data);
 };
 export const getProjectEpics = (
   projectId: string,
@@ -156,7 +184,9 @@ export const getProjectTasks = (
   });
 };
 export const getProjectTask = (projectId: string, id: string) => {
-  return api.get<Task[]>(`/rest/v1/tasks?id=eq.${id}&&project_id=eq.${projectId}`);
+  return api.get<Task[]>(
+    `/rest/v1/tasks?id=eq.${id}&&project_id=eq.${projectId}`,
+  );
 };
 
 export const getEpicTasks = (epicId: string) => {

@@ -22,6 +22,7 @@ import {
   LogoutIcon,
   Menu,
   ProjectsIconResponsive,
+  StatisticsIcon,
 } from "./SideBarIcons";
 
 type IconProps = {
@@ -53,6 +54,12 @@ export default function Sidebar() {
       icon: ProjectsIcon,
       path: "/dashboard/projects",
       responsiveIcon: ProjectsIconResponsive,
+    },
+    {
+      label: "My Statistics",
+      icon: StatisticsIcon,
+      path: "/dashboard/my-statistics",
+     
     },
     ...(projectId
       ? [

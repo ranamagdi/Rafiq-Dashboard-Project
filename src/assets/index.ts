@@ -29,6 +29,7 @@ import error from './icons/error.svg'
 import filledIconCheck from "./icons/filled-iconcheck.svg"
 import boardViewIcon from './icons/board-view-icon.svg'
 import listViewIcon from './icons/list-view-icon.svg'
+import barChart from './icons/bar-chart.svg'
 export const IMAGES = {
     projectEmpty,
     EpicEmpty
@@ -61,6 +62,7 @@ export const ICONS = {
   search,
   error,
   menu,
+  barChart,
   listViewIcon,
   boardViewIcon
 
