@@ -6,6 +6,7 @@ import {
   MembersIcon,
   DetailsIcon,
   ProjectsIcon,
+  StatisticsIcon,
 } from "./SideBarIcons";
 import { NavLink, useLocation, useParams } from "react-router-dom";
 import React from "react";
@@ -33,6 +34,11 @@ export default function SidebarBottom({ isMobile }: Props) {
       icon: ProjectsIcon,
       path: "/dashboard/projects",
       responsiveIcon: ProjectsIconResponsive,
+    },
+    {
+      label: "My Statistics",
+      icon: StatisticsIcon,
+      path: "/dashboard/my-statistics",
     },
     ...(projectId
       ? [
