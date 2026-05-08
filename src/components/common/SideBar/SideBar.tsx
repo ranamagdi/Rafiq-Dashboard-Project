@@ -2,7 +2,7 @@ import { useState } from "react";
 import Logo from "/favicon.svg";
 import useIsMobile from "../../../hooks/useIsMobile";
 import { logout } from "../../../services/endpoints";
-import { clearUserMetaData } from "../../../store/slices/user/userSlice";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCookie } from "../../../hooks/useCookie";
 import { useLocation, NavLink, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../../hooks/reduxHooks";
@@ -38,6 +38,7 @@ type NavItem = {
 
 export default function Sidebar() {
   const { deleteCookie } = useCookie();
+  const queryClient = useQueryClient();
   const dispatch = useAppDispatch();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -89,18 +90,19 @@ export default function Sidebar() {
   const navItems = getNavItems(projectId);
 
   const handleLogout = async () => {
-    try {
-      await logout();
+  try {
+    await logout();
 
-      deleteCookie("access_token");
-      deleteCookie("refresh_token");
-      dispatch(clearUserMetaData());
+    deleteCookie("access_token");
+    deleteCookie("refresh_token");
 
-      window.location.href = "/login";
-    } catch (error) {
-      console.error("Logout failed", error);
-    }
-  };
+    queryClient.clear();
+
+    window.location.href = "/login";
+  } catch (error) {
+    console.error("Logout failed", error);
+  }
+};
   return (
     <>
       {isMobile && isOpen && (

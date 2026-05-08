@@ -1,9 +1,13 @@
-import type {UserMetaData} from "../store/slices/user/userSlice";
+
 export interface Project {
   id?: string;
   name: string;
   description: string;
+    created_at: string;
 }
+
+
+
 export interface SelectOption {
   value: string;
   label: string;
@@ -123,6 +127,14 @@ export type Member = {
     name?: string;
   };
 };
+export interface UserMetaData {
+  sub?: string;
+  name?: string;
+  email?: string;
+  department?: string;
+  email_verified?: boolean;
+  phone_verified?: boolean;
+}
 export interface LoginResponse {
   access_token: string;
   refresh_token: string;

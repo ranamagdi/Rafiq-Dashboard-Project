@@ -7,15 +7,14 @@ import type { SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import { login } from "../../../services/endpoints";
-import { fetchUser } from "../../../store/slices/user/userSlice";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useCookie } from "../../../hooks/useCookie";
-import { useAppDispatch } from "../../../hooks/reduxHooks";
 
 const Login = () => {
   const { setCookie } = useCookie();
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
+  const queryClient = useQueryClient();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [remember, setRemember] = useState(true);
 
@@ -40,47 +39,47 @@ const Login = () => {
       email: isDev ? "doha@gmail.com" : "",
       password: isDev ? "Password123!" : "",
     },
-   
   });
 
- const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
-  try {
-    setErrorMessage(null);
+  const handleSubmitForm: SubmitHandler<FormData> = async (data) => {
+    try {
+      setErrorMessage(null);
 
-    const response = await login(data.email, data.password);
+      const response = await login(data.email, data.password);
 
-    const { access_token, refresh_token, expires_at } = response.data;
+      const { access_token, refresh_token, expires_at } = response.data;
 
-    setCookie("access_token", access_token, {
-      expiresAt: expires_at,
-    });
-
-    if (remember) {
-      setCookie("refresh_token", refresh_token, {
-        days: 30,
+      setCookie("access_token", access_token, {
+        expiresAt: expires_at,
       });
+
+      if (remember) {
+        setCookie("refresh_token", refresh_token, {
+          days: 30,
+        });
+      }
+
+      await queryClient.invalidateQueries({
+        queryKey: ["user"],
+      });
+
+      const redirectTo = sessionStorage.getItem("redirect_after_login");
+
+      if (redirectTo) {
+        sessionStorage.removeItem("redirect_after_login");
+        navigate(redirectTo, { replace: true });
+        return;
+      }
+
+      navigate("/dashboard");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "An error occurred during sign in",
+      );
     }
-
-    dispatch(fetchUser());
-
-    // ✅ IMPORTANT: handle redirect after login
-    const redirectTo = sessionStorage.getItem("redirect_after_login");
-
-    if (redirectTo) {
-      sessionStorage.removeItem("redirect_after_login");
-      navigate(redirectTo, { replace: true });
-      return;
-    }
-
-    navigate("/dashboard");
-  } catch (error) {
-    setErrorMessage(
-      error instanceof Error
-        ? error.message
-        : "An error occurred during sign in"
-    );
-  }
-};
+  };
 
   return (
     <div className="h-screen flex items-center justify-center">

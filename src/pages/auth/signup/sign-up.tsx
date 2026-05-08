@@ -1,4 +1,3 @@
-
 import { ICONS } from "../../../assets/index";
 import Input from "../../../components/ui/Input";
 import Button from "../../../components/ui/Button";
@@ -10,12 +9,11 @@ import z from "zod";
 import { signUp } from "../../../services/endpoints";
 import { useState } from "react";
 import { useCookie } from "../../../hooks/useCookie";
-import { useAppDispatch } from "../../../hooks/reduxHooks";
-import { fetchUser } from "../../../store/slices/user/userSlice";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
+  const queryClient = useQueryClient();
   const { setCookie } = useCookie();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -93,8 +91,9 @@ const Signup = () => {
       setCookie("refresh_token", refresh_token);
       setCookie("expires_at", expires_at.toString(), { expiresAt: expires_at });
 
-       dispatch(fetchUser());
-
+      await queryClient.invalidateQueries({
+        queryKey: ["user"],
+      });
 
       navigate("/dashboard");
       console.log("Sign up successful:", response.data);
@@ -136,15 +135,20 @@ const Signup = () => {
             </button>
           </div>
         )}
-        <form className="flex flex-col items-start text-left pt-10 pb-4 w-full" onSubmit={handleSubmit(handleSubmitForm)}>
+        <form
+          className="flex flex-col items-start text-left pt-10 pb-4 w-full"
+          onSubmit={handleSubmit(handleSubmitForm)}
+        >
           <div className="mb-5 w-full">
-            <label className={`
+            <label
+              className={`
                   text-(length:--label-sm-size)
                   font-(--label-sm-weight)
                   text-(--color-slate-medium-blue)
                   uppercase mb-3
                   ${errors.name ? "text-(--color-error)" : ""}
-                `}>
+                `}
+            >
               Name
             </label>
             <Input
@@ -158,13 +162,15 @@ const Signup = () => {
           </div>
 
           <div className="mb-5 w-full">
-            <label className={`
+            <label
+              className={`
                   text-(length:--label-sm-size)
                   font-(--label-sm-weight)
                   text-(--color-slate-medium-blue)
                   uppercase mb-3
                   ${errors.email ? "text-(--color-error)" : ""}
-                `}>
+                `}
+            >
               Email
             </label>
             <Input
@@ -178,18 +184,25 @@ const Signup = () => {
           </div>
 
           <div className="mb-5 w-full">
-            <label className={`
+            <label
+              className={`
                   text-(length:--label-sm-size)
                   font-(--label-sm-weight)
                   text-(--color-slate-medium-blue)
                   uppercase mb-3
                   ${errors.department ? "text-(--color-error)" : ""}
-                `}>
-              Job Title <span className=" text-(length:--label-sm-size)
+                `}
+            >
+              Job Title{" "}
+              <span
+                className=" text-(length:--label-sm-size)
               font-(--body-md-weight)
               text-(--color-slate-medium-blue)
               uppercase
-              mb-3">(optional)</span>
+              mb-3"
+              >
+                (optional)
+              </span>
             </label>
             <Input
               type="text"
@@ -203,13 +216,15 @@ const Signup = () => {
 
           <div className="mb-5 w-full grid grid-cols-12 gap-4">
             <div className="col-span-12 md:col-span-6">
-              <label className={`
+              <label
+                className={`
                   text-(length:--label-sm-size)
                   font-(--label-sm-weight)
                   text-(--color-slate-medium-blue)
                   uppercase mb-3
                   ${errors.password ? "text-(--color-error)" : ""}
-                `}>
+                `}
+              >
                 Password
               </label>
               <Input
@@ -222,13 +237,15 @@ const Signup = () => {
               )}
             </div>
             <div className="col-span-12 md:col-span-6">
-              <label className={`
+              <label
+                className={`
                   text-(length:--label-sm-size)
                   font-(--label-sm-weight)
                   text-(--color-slate-medium-blue)
                   uppercase mb-3
                   ${errors.confirmPassword ? "text-(--color-error)" : ""}
-                `}>
+                `}
+              >
                 Confirm Password
               </label>
               <Input
@@ -244,10 +261,12 @@ const Signup = () => {
             </div>
           </div>
 
-          <div className="mb-5 w-full md:flex hidden flex-col
+          <div
+            className="mb-5 w-full md:flex hidden flex-col
               p-4
               rounded-(--radius-form)
-              bg-(--color-surface-highest)  gap-3">
+              bg-(--color-surface-highest)  gap-3"
+          >
             {[
               {
                 passed: passwordChecks.minLength,
@@ -277,11 +296,15 @@ const Signup = () => {
                     />
                   )}
                 </div>
-                <p className={` text-(length:--label-sm-size)
+                <p
+                  className={` text-(length:--label-sm-size)
                 font-(--body-md-weight)
                 text-(--color-forms-texts)
                 m-0
-                capitalize ${passed ? "text-primary" : ""}`}>{label}</p>
+                capitalize ${passed ? "text-primary" : ""}`}
+                >
+                  {label}
+                </p>
               </label>
             ))}
           </div>
@@ -290,11 +313,13 @@ const Signup = () => {
             {isSubmitting ? "Creating account..." : "Create account"}
           </Button>
         </form>
-        <p className="text-center text-(length:--body-md-size)
+        <p
+          className="text-center text-(length:--body-md-size)
             font-(--body-md-weight)
             text-(--color-slate-medium-blue)
             leading-5
-            mt-4">
+            mt-4"
+        >
           Already have an account?{" "}
           <span
             className="text-primary cursor-pointer text-(--color-primary)

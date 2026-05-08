@@ -3,6 +3,8 @@ import { getInitials } from "../../utils/nameUtils";
 import { useAppSelector } from "../../../hooks/reduxHooks";
 import Logo from "/favicon.svg";
 import useIsMobile from "../../../hooks/useIsMobile";
+import { useUserQuery } from "../../../hooks/queries/useUserQuery";
+
 
 const Header = () => {
   const { getCookie } = useCookie();
@@ -10,7 +12,7 @@ const Header = () => {
   const isSidebarOpen = useAppSelector((state) => state.slider.isSidebarOpen);
   const accessToken = getCookie("access_token");
 
-  const user = useAppSelector((state) => state.user.userMetaData);
+ const { data: user } = useUserQuery();
 
 
   const initials = getInitials(user?.name);
