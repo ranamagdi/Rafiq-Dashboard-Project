@@ -1,11 +1,12 @@
-import {  useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import BoardViewCard from "./BoardViewCard";
 import type { Task, StatusVariant } from "../../types/apiTypes";
 import BoardColumn from "./BoardColumn";
 import { updateTask } from "../../services/endpoints";
 import { COLUMNS } from "../utils/constants";
 import toast from "react-hot-toast";
-import type {DragState} from '../../types/apiTypes'
+import { useMutation } from "@tanstack/react-query";
+import type { DragState } from "../../types/apiTypes";
 
 import {
   DndContext,
@@ -17,7 +18,6 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 
-
 type BoardViewTasksProps = {
   projectId: string;
   epicId?: string;
@@ -25,23 +25,75 @@ type BoardViewTasksProps = {
   onTaskClick: (taskId: string, projectId: string) => void;
 };
 
-
-
 export default function BoardViewTasks({
   projectId,
   onTaskClick,
   searchTerm = "",
 }: BoardViewTasksProps) {
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [dragState, setDragState] = useState<DragState>({
     movedIn: {},
     movedOut: new Set(),
   });
 
-  const [activeTask, setActiveTask] = useState<Task | null>(null);
-
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
+
+  const mutation = useMutation({
+    mutationFn: ({
+      taskId,
+      newStatus,
+    }: {
+      taskId: string;
+      newStatus: StatusVariant;
+      task: Task;
+      currentStatus: string;
+    }) => updateTask(taskId, { status: newStatus }),
+
+    onMutate: ({ task, newStatus }) => {
+      setDragState((prev) => {
+        const nextMovedIn: Record<string, Task[]> = {};
+        for (const [status, tasks] of Object.entries(prev.movedIn)) {
+          const filtered = tasks.filter((t) => t.id !== task.id);
+          if (filtered.length > 0) nextMovedIn[status] = filtered;
+        }
+
+        const updatedTask: Task = { ...task, status: newStatus as Task["status"] };
+        nextMovedIn[newStatus] = [updatedTask, ...(nextMovedIn[newStatus] ?? [])];
+
+        const nextMovedOut = new Set(prev.movedOut);
+        nextMovedOut.add(task.id);
+
+        return { movedIn: nextMovedIn, movedOut: nextMovedOut };
+      });
+    },
+
+    onError: (_err, { task, currentStatus }) => {
+      setDragState((prev) => {
+        const nextMovedIn: Record<string, Task[]> = {};
+        for (const [status, tasks] of Object.entries(prev.movedIn)) {
+          const filtered = tasks.filter((t) => t.id !== task.id);
+          if (filtered.length > 0) nextMovedIn[status] = filtered;
+        }
+
+        if (currentStatus !== task.status) {
+          const revertedTask: Task = { ...task, status: currentStatus as Task["status"] };
+          nextMovedIn[currentStatus] = [
+            revertedTask,
+            ...(nextMovedIn[currentStatus] ?? []),
+          ];
+        }
+
+        const nextMovedOut = new Set(prev.movedOut);
+        if (currentStatus === task.status) nextMovedOut.delete(task.id);
+
+        return { movedIn: nextMovedIn, movedOut: nextMovedOut };
+      });
+
+      toast.error("Failed to move task. Reverted.");
+    },
+  });
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const task = event.active.data.current?.task as Task | undefined;
@@ -49,7 +101,7 @@ export default function BoardViewTasks({
   }, []);
 
   const handleDragEnd = useCallback(
-    async (event: DragEndEvent) => {
+    (event: DragEndEvent) => {
       setActiveTask(null);
 
       const { active, over } = event;
@@ -60,7 +112,6 @@ export default function BoardViewTasks({
 
       const newStatus = over.id as StatusVariant;
 
-      // Resolve where this task currently lives (may have been moved before)
       const currentStatus =
         Object.entries(dragState.movedIn).find(([, tasks]) =>
           tasks.some((t) => t.id === task.id),
@@ -68,59 +119,9 @@ export default function BoardViewTasks({
 
       if (newStatus === currentStatus) return;
 
-      // ── Optimistic update ──────────────────────────────────────────────────
-      setDragState((prev) => {
-        // Strip task from any movedIn bucket it currently sits in
-        const nextMovedIn: Record<string, Task[]> = {};
-        for (const [status, tasks] of Object.entries(prev.movedIn)) {
-          const filtered = tasks.filter((t) => t.id !== task.id);
-          if (filtered.length > 0) nextMovedIn[status] = filtered;
-        }
-
-        // Inject into the target column with the updated status
-        const updatedTask: Task = { ...task, status: newStatus as Task["status"] };
-        nextMovedIn[newStatus] = [updatedTask, ...(nextMovedIn[newStatus] ?? [])];
-
-        // Hide from original fetched column
-        const nextMovedOut = new Set(prev.movedOut);
-        nextMovedOut.add(task.id);
-
-        return { movedIn: nextMovedIn, movedOut: nextMovedOut };
-      });
-
-     
-      try {
-        await updateTask(task.id, { status: newStatus });
-      } catch {
-  
-        setDragState((prev) => {
-          const nextMovedIn: Record<string, Task[]> = {};
-          for (const [status, tasks] of Object.entries(prev.movedIn)) {
-            const filtered = tasks.filter((t) => t.id !== task.id);
-            if (filtered.length > 0) nextMovedIn[status] = filtered;
-          }
-
-          // Re-inject at its previous position only if it had been moved before
-          if (currentStatus !== task.status) {
-            const revertedTask: Task = { ...task, status: currentStatus as Task["status"] };
-            nextMovedIn[currentStatus] = [
-              revertedTask,
-              ...(nextMovedIn[currentStatus] ?? []),
-            ];
-          }
-
-          const nextMovedOut = new Set(prev.movedOut);
-          // Un-hide from original column if this was its first move
-          if (currentStatus === task.status) nextMovedOut.delete(task.id);
-
-          return { movedIn: nextMovedIn, movedOut: nextMovedOut };
-        });
-
-        toast.error(`Failed to move task ${task.id} to ${newStatus}. Reverted.`);
-        
-      }
+      mutation.mutate({ taskId: task.id, newStatus, task, currentStatus });
     },
-    [dragState.movedIn],
+    [mutation, dragState.movedIn],
   );
 
   return (
@@ -144,7 +145,6 @@ export default function BoardViewTasks({
         </div>
       </div>
 
-      {/* Floating ghost card */}
       <DragOverlay dropAnimation={{ duration: 180, easing: "ease" }}>
         {activeTask ? (
           <div style={{ transform: "rotate(2deg)", opacity: 0.92 }}>

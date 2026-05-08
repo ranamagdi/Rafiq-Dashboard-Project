@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Select, { type StylesConfig, type SingleValue } from "react-select";
 import {
   formatRangeLabel,
@@ -32,120 +33,101 @@ type FilterSectionProps = {
 };
 
 export default function FilterSection({ onDataFetched }: FilterSectionProps) {
-  const [projects, setProjects] = useState<SelectOption[]>([
-    { value: "all", label: "All Projects" },
-  ]);
-  const onDataFetchedRef = useRef(onDataFetched);
-  useEffect(() => {
-    onDataFetchedRef.current = onDataFetched;
-  }, [onDataFetched]);
+  const MAX_RANGE = 7;
+
   const [selectedProject, setSelectedProject] = useState<SelectOption>({
     value: "all",
     label: "All Projects",
   });
-  const MAX_RANGE = 7;
-
-  const [rangeError, setRangeError] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<StatusOption>(
     statusOptions[0],
   );
-  const [dateRange, setDateRange] = useState(getCurrentWeekRange());
-  const [pendingRange, setPendingRange] = useState(getCurrentWeekRange());
-
+  const [dateRange, setDateRange] = useState<DateRange>(getCurrentWeekRange());
+  const [pendingRange, setPendingRange] = useState<DateRange>(getCurrentWeekRange());
+  const [rangeError, setRangeError] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    getProjects()
-      .then((res) => {
+
+  const { data: projectOptions = [{ value: "all", label: "All Projects" }] } =
+    useQuery({
+      queryKey: ["projects"],
+      queryFn: async () => {
+        const res = await getProjects();
         const data = res.data as Project[];
-        const opts: SelectOption[] = [
+        return [
           { value: "all", label: "All Projects" },
           ...data.map((p) => ({ value: String(p.id), label: p.name })),
         ];
-        setProjects(opts);
-      })
-      .catch(() => {});
-  }, []);
+      },
+    });
+
+const payload = dateRange.start && dateRange.end
+  ? {
+      p_start_date: formatDate(dateRange.start),
+      p_end_date: formatDate(dateRange.end),
+      p_project_id: selectedProject.value === "all" ? null : selectedProject.value,
+      p_status: selectedStatus.value === "all" ? null : selectedStatus.value,
+    }
+  : null;
+
+const { data: statsData } = useQuery({
+  queryKey: ["stats", payload],
+  queryFn: async () => {
+    const [calendarRes, projectRes] = await Promise.all([
+      getTasksCalendarStats(payload!),
+      getTasksCountPerProject({
+        p_start_date: payload!.p_start_date,
+        p_end_date: payload!.p_end_date,
+      }),
+    ]);
+    return {
+      calendar: calendarRes.data as CalendarStatsResponse,
+      projects: projectRes.data as ProjectStatItem[],
+    };
+  },
+  enabled: payload !== null,  
+});
+
+  // Notify parent whenever stats arrive
+  useEffect(() => {
+    if (statsData) {
+      onDataFetched(statsData.calendar, statsData.projects);
+    }
+  }, [statsData, onDataFetched]);
+
 
   useEffect(() => {
     function handle(e: MouseEvent) {
-      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node))
         setPickerOpen(false);
-      }
     }
     document.addEventListener("mousedown", handle);
     return () => document.removeEventListener("mousedown", handle);
   }, []);
+
   function handleDaySelect(date: Date) {
     setRangeError(null);
     if (!pendingRange.start || pendingRange.end) {
       setPendingRange({ start: date, end: null! });
       return;
     }
-
     let start = pendingRange.start;
     let end = date;
-
-    if (date < start) {
-      start = date;
-      end = pendingRange.start;
-    }
-
-    const diff = getDaysDiff(start, end);
-
-    if (diff > MAX_RANGE - 1) {
+    if (date < start) { start = date; end = pendingRange.start; }
+    if (getDaysDiff(start, end) > MAX_RANGE - 1) {
       setRangeError("Maximum range is 7 days");
       return;
     }
-
     setPendingRange({ start, end });
   }
-  const fetchData = useCallback(
-    async (range: DateRange) => {
-      if (!range.start || !range.end) return;
 
-      const payload = {
-        p_start_date: formatDate(range.start),
-        p_end_date: formatDate(range.end),
-        p_project_id:
-          selectedProject.value === "all" ? null : selectedProject.value,
-        p_status: selectedStatus.value === "all" ? null : selectedStatus.value,
-      };
-
-      try {
-        const [calendarRes, projectRes] = await Promise.all([
-          getTasksCalendarStats(payload),
-          getTasksCountPerProject({
-            p_start_date: payload.p_start_date,
-            p_end_date: payload.p_end_date,
-          }),
-        ]);
-        onDataFetchedRef.current(
-          // ← use ref, not prop directly
-          calendarRes.data as CalendarStatsResponse,
-          projectRes.data as ProjectStatItem[],
-        );
-      } catch (err) {
-        console.error("API error", err);
-      }
-    },
-    [selectedProject.value, selectedStatus.value],
-  );
-
-  async function handleApply() {
+  function handleApply() {
     if (!pendingRange.start || !pendingRange.end) return;
-
-    setDateRange(pendingRange);
+    setDateRange(pendingRange);   // triggers the query automatically
     setPickerOpen(false);
-
-    await fetchData(pendingRange);
   }
-  useEffect(() => {
-    if (!dateRange.start || !dateRange.end) return;
 
-    fetchData(dateRange);
-  }, [dateRange, fetchData]);
   function handleCancel() {
     setPendingRange(dateRange);
     setPickerOpen(false);
@@ -156,7 +138,6 @@ export default function FilterSection({ onDataFetched }: FilterSectionProps) {
     setPickerOpen(true);
   }
 
-  const displayRange: DateRange = pickerOpen ? pendingRange : dateRange;
 
   const baseSelectStyles: StylesConfig<SelectOption> = {
     control: (base) => ({
@@ -226,6 +207,8 @@ export default function FilterSection({ onDataFetched }: FilterSectionProps) {
     }),
   };
 
+  const displayRange: DateRange = pickerOpen ? pendingRange : dateRange;
+
   return (
     <div className="flex items-center justify-between gap-3 py-3 my-7 flex-wrap bg-(--color-surface-low)">
       <div className="relative" ref={pickerRef}>
@@ -234,29 +217,11 @@ export default function FilterSection({ onDataFetched }: FilterSectionProps) {
           onClick={openPicker}
           className="flex items-center gap-2.5 px-4 cursor-pointer h-10 whitespace-nowrap"
         >
-          <span className="text-slate-400 text-lg font-normal leading-none">
-            ‹
-          </span>
+          <span className="text-slate-400 text-lg font-normal leading-none">‹</span>
           <span className="text-slate-800 font-semibold text-sm">
-            {dateRange.start
-              ? formatRangeLabel(dateRange)
-              : (() => {
-                  const now = new Date();
-                  const mon = new Date(now);
-                  mon.setDate(now.getDate() - ((now.getDay() + 6) % 7));
-                  const sun = new Date(mon);
-                  sun.setDate(mon.getDate() + 6);
-                  const fmt = (d: Date) =>
-                    d.toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    });
-                  return `${fmt(mon)} – ${fmt(sun)}, ${sun.getFullYear()}`;
-                })()}
+            {formatRangeLabel(dateRange)}
           </span>
-          <span className="text-slate-400 text-lg font-normal leading-none">
-            ›
-          </span>
+          <span className="text-slate-400 text-lg font-normal leading-none">›</span>
         </Button>
 
         {pickerOpen && (
@@ -273,9 +238,9 @@ export default function FilterSection({ onDataFetched }: FilterSectionProps) {
       </div>
 
       <div className="flex justify-between gap-2.5 mx-2">
-        <div className="min-w-auto sm:min-w-45 ">
+        <div className="min-w-auto sm:min-w-45">
           <Select<SelectOption>
-            options={projects}
+            options={projectOptions}
             value={selectedProject}
             onChange={(opt) => opt && setSelectedProject(opt)}
             styles={baseSelectStyles}
@@ -292,9 +257,7 @@ export default function FilterSection({ onDataFetched }: FilterSectionProps) {
             }
             styles={statusSelectStyles}
             isSearchable={false}
-            formatOptionLabel={(option) => (
-              <StatusOptionLabel option={option} />
-            )}
+            formatOptionLabel={(option) => <StatusOptionLabel option={option} />}
           />
         </div>
       </div>

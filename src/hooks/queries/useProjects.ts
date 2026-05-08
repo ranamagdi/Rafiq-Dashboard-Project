@@ -1,20 +1,23 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProjects, createProject } from '../../services/endpoints';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { getProjects } from '../../services/endpoints';
+import type { Project, ApiResponse } from '../../types/apiTypes';
 
-export const useProjects = (limit: number, offset: number) => {
+export const useProjects = (
+  limit: number,
+  offset: number,
+  searchTerm?: string,
+  options?: { enabled?: boolean }  
+) => {
   return useQuery({
-    queryKey: ['projects', limit, offset],
-    queryFn: () => getProjects(limit, offset),
-    placeholderData: (previousData) => previousData, // Keeps UI stable during pagination
-  });
-};
-
-export const useCreateProject = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: createProject,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    queryKey: ['projects', limit, offset, searchTerm],
+    queryFn: async () => {
+      const res = await getProjects(limit, offset) as ApiResponse<Project[]>;
+      const contentRange = res.headers?.get?.("content-range") ?? null;
+      const total = contentRange ? parseInt(contentRange.split("/")[1], 10) : 0;
+      const data = res.data;
+      return { data, total };
     },
+    placeholderData: keepPreviousData,
+    enabled: options?.enabled ?? true,  
   });
 };

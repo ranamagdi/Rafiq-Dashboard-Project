@@ -1,4 +1,5 @@
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useRef, useCallback } from "react";
+import { useNavigate,useSearchParams } from "react-router-dom";
 import ProjectCard from "../../../components/project/ProjectCard";
 import Button from "../../../components/ui/Button";
 import Pagination from "../../../components/common/Pagination/Pagination";
@@ -8,78 +9,67 @@ import ErrorContent from "../../../components/common/Content/ErrorContent";
 import { ICONS, IMAGES } from "../../../assets/index";
 import ProjectCardSkeleton from "../../../components/project/ProjectCardSkeleton";
 import useIsMobile from "../../../hooks/useIsMobile";
-import { useProjects } from "../../../hooks/queries/useProjects"; 
-import type { ApiResponse } from "../../../types/apiTypes";
-import type { Project } from "../../../types/apiTypes";
+import { useProjects } from "../../../hooks/queries/useProjects";
+import { useProjectsInfinite } from "../../../hooks/queries/useProjectsInfinite";
 
 const PAGE_SIZE = 10;
-
-
-function parseTotalFromResponse(res: unknown): number {
-  if (res && typeof res === "object" && "headers" in res) {
-    const headers = (res as { headers?: Headers }).headers;
-    const contentRange = headers?.get?.("content-range") ?? null;
-    if (contentRange) return parseInt(contentRange.split("/")[1], 10);
-  }
-  return 0;
-}
-
-
-function parseProjectsFromResponse(res: unknown): Project[] {
-  if (Array.isArray(res)) return res as Project[];
-  if (res && typeof res === "object" && "data" in res) {
-    return ((res as ApiResponse<Project[]>).data) ?? [];
-  }
-  return [];
-}
 
 export default function Projects() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-
-  // Sync current page with URL so browser back/forward works
-  const [searchParams, setSearchParams] = useSearchParams();
-  const currentPage = Math.max(1, Number(searchParams.get("page") ?? 1));
+   const [searchParams, setSearchParams] = useSearchParams();
+  const currentPage = parseInt(searchParams.get("page") ?? "1", 10);
   const offset = (currentPage - 1) * PAGE_SIZE;
 
-  const goToPage = (page: number) =>
-    setSearchParams({ page: String(page) });
 
-  const { data: res, isLoading, isError, isFetching } = useProjects(PAGE_SIZE, offset);
+const { data: desktopData, isLoading: desktopLoading, isError: desktopError } = 
+  useProjects(PAGE_SIZE, offset, undefined, { enabled: !isMobile });
 
-  const projects = parseProjectsFromResponse(res);
-  const totalItems = parseTotalFromResponse(res);
+const { data: infiniteData, isLoading: mobileLoading, isError: mobileError, fetchNextPage, hasNextPage, isFetchingNextPage } = 
+  useProjectsInfinite({ enabled: isMobile });
+
+  const isLoading = isMobile ? mobileLoading : desktopLoading;
+  const isError = isMobile ? mobileError : desktopError;
+
+  const projects = isMobile
+    ? (infiniteData?.pages.flatMap((p) => p.data) ?? [])
+    : (desktopData?.data ?? []);
+
+  const totalItems = isMobile
+    ? (infiniteData?.pages[0]?.total ?? 0)
+    : (desktopData?.total ?? 0);
+
   const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+  const hasMore = currentPage < totalPages;
 
-  // Guard: page out of range (only after a successful fetch)
-  const isOutOfRange = !isLoading && !isError && totalItems > 0 && currentPage > totalPages;
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastElementRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (isLoading || isFetchingNextPage) return;
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasNextPage) {
+          fetchNextPage();
+        }
+      });
+      if (node) observer.current.observe(node);
+    },
+    [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]
+  );
 
-  if (isOutOfRange) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-9">
-        <EmptyContent
-          image={IMAGES.projectEmpty}
-          title="No Projects"
-          description="You don't have any projects yet. Start by defining your first architectural workspace to begin tracking tasks and epics."
-        >
-          <Button onClick={() => goToPage(1)}>Go to Page 1</Button>
-        </EmptyContent>
-      </div>
-    );
-  }
 
-  // Derive visible page numbers for your existing Pagination component
+  const handlePreviousPage = () =>
+    setSearchParams({ page: String(Math.max(1, currentPage - 1)) });
+  const handleNextPage = () =>
+    setSearchParams({ page: String(hasMore ? currentPage + 1 : currentPage) });
+  const handlePageClick = (page: number) =>
+    setSearchParams({ page: String(page) });
   const getVisiblePages = () => {
-    const delta = 2;
-    const range: number[] = [];
-    for (
-      let i = Math.max(1, currentPage - delta);
-      i <= Math.min(totalPages, currentPage + delta);
-      i++
-    ) {
-      range.push(i);
-    }
-    return range;
+    const pages: number[] = [];
+    const start = Math.max(1, currentPage - 2);
+    const end = Math.min(totalPages, currentPage + 2);
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
   };
 
   return (
@@ -87,9 +77,7 @@ export default function Projects() {
       {!isError && (projects.length !== 0 || isLoading) && (
         <div className="grid grid-cols-12 items-center mt-4">
           <div className="col-span-12 md:col-span-10">
-            <h2 className="text-[#041B3C] text-[30px] font-semibold">
-              Projects
-            </h2>
+            <h2 className="text-[#041B3C] text-[30px] font-semibold">Projects</h2>
             <p className="text-[#434654] text-[14px] font-normal">
               Manage and curate your projects
             </p>
@@ -102,22 +90,21 @@ export default function Projects() {
         </div>
       )}
 
-      {/* Subtle dimming while fetching next page (placeholderData keeps old items visible) */}
-      <div
-        className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-200 ${
-          isFetching && !isLoading ? "opacity-60" : "opacity-100"
-        }`}
-      >
-        {projects.map((project) => (
-          <ProjectCard
-            key={project.id}
-            title={project.name}
-            description={project.description}
-            createdAt={project.created_at}
-            projectId={project.id}
-            to={`/dashboard/project/${project.id}/epics`}
-          />
-        ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {projects.map((project, index) => {
+          const isLast = isMobile && index === projects.length - 1;
+          return (
+            <div key={project.id} ref={isLast ? lastElementRef : null}>
+              <ProjectCard
+                title={project.name}
+                description={project.description}
+                createdAt={project.created_at}
+                projectId={project.id}
+                to={`/dashboard/project/${project.id}/epics`}
+              />
+            </div>
+          );
+        })}
 
         {!isLoading && projects.length > 0 && (
           <>
@@ -142,25 +129,24 @@ export default function Projects() {
           </>
         )}
 
-        {isLoading &&
+        {(isLoading || isFetchingNextPage) &&
           Array.from({ length: isMobile ? 3 : 6 }).map((_, i) => (
             <ProjectCardSkeleton key={`skeleton-${i}`} />
           ))}
       </div>
 
-   
-      {!isMobile && !isLoading && projects.length > 0 && totalPages > 1 && (
+      {!isMobile && !isLoading && projects.length > 0 && (
         <Pagination
           currentPage={currentPage}
           totalItems={totalItems}
           pageSize={PAGE_SIZE}
-          hasMore={currentPage < totalPages}
+          hasMore={hasMore}
           itemsShown={projects.length}
           label="projects"
           getVisiblePages={getVisiblePages}
-          handlePreviousPage={() => goToPage(currentPage - 1)}
-          handleNextPage={() => goToPage(currentPage + 1)}
-          handlePageClick={goToPage}
+          handlePreviousPage={handlePreviousPage}
+          handleNextPage={handleNextPage}
+          handlePageClick={handlePageClick}
         />
       )}
 
@@ -170,9 +156,7 @@ export default function Projects() {
           description="We're having trouble retrieving your projects right now. Please try again in a moment."
           icon={<img src={ICONS.error} alt="error" className="w-6 h-6" />}
         >
-          <Button onClick={() => window.location.reload()}>
-            Retry connection
-          </Button>
+          <Button onClick={() => window.location.reload()}>Retry connection</Button>
         </ErrorContent>
       )}
 

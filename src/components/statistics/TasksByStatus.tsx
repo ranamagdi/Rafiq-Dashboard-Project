@@ -13,7 +13,7 @@ type TasksByStatusProps = {
 export default function TasksByStatus({ data }: TasksByStatusProps) {
   const total = data.reduce((acc, curr) => acc + curr.count, 0);
 
-  // Build conic-gradient segments from real data
+
   const gradient = (() => {
     if (!total) return "#f1f5f9";
     const GAP = 2; // degrees gap between segments
@@ -43,7 +43,7 @@ export default function TasksByStatus({ data }: TasksByStatusProps) {
 
       <div className="flex items-center justify-between gap-8">
 
-        {/* Donut chart */}
+      
         <div className="relative flex items-center justify-center w-40 h-40 shrink-0">
           <div
             className="absolute inset-0 rounded-full"
@@ -63,7 +63,7 @@ export default function TasksByStatus({ data }: TasksByStatusProps) {
           </div>
         </div>
 
-        {/* Legend + bars */}
+      
         <div className="flex-1 space-y-5">
           {data.map((item) => {
             const map = STATUS_MAP[item.status];

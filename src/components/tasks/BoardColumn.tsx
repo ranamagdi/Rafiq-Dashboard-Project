@@ -1,5 +1,3 @@
-
-
 import { useRef, useEffect } from "react";
 import { PlusIcon, PlusRoundedIcon } from "../ui/SvgIcons";
 import type { Task, Column } from "../../types/apiTypes";
@@ -7,15 +5,10 @@ import Button from "../ui/Button";
 import { useNavigate } from "react-router-dom";
 import { usePagination } from "../../hooks/usePagination";
 import { getProjectTasks } from "../../services/endpoints";
-import type {DragState} from '../../types/apiTypes'
+import type { DragState } from "../../types/apiTypes";
 import { mergeRefs } from "../utils/helpers";
 import DraggableCard from "./DraggableCard";
-import {
-  useDroppable,
-
-} from "@dnd-kit/core";
-
-
+import { useDroppable } from "@dnd-kit/core";
 
 export default function BoardColumn({
   col,
@@ -59,13 +52,8 @@ export default function BoardColumn({
     },
   });
 
-  // Hide tasks that were dragged away from this column
   const ownItems = rawItems.filter((t) => !dragState.movedOut.has(t.id));
-
-  // Tasks dragged into this column from elsewhere
   const injected = dragState.movedIn[col.status] ?? [];
-
-  // Injected items appear at the top
   const items = [...injected, ...ownItems];
 
   const prevSearchTerm = useRef<string | null>(null);
@@ -80,7 +68,6 @@ export default function BoardColumn({
 
   return (
     <div className="flex flex-col min-w-62.5 h-full">
-      
       <div className="flex items-center justify-between mb-3 shrink-0">
         <div className="flex items-center gap-2">
           <span
@@ -108,7 +95,6 @@ export default function BoardColumn({
         </Button>
       </div>
 
-
       <Button
         onClick={() =>
           navigate(
@@ -121,7 +107,6 @@ export default function BoardColumn({
         ADD NEW TASK
       </Button>
 
-     
       <div
         ref={mergeRefs(setNodeRef, scrollRef)}
         className="flex-1 overflow-y-auto min-h-0 pr-1 rounded-md transition-colors duration-150"

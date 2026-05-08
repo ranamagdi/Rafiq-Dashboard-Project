@@ -17,13 +17,15 @@ import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import { PlusIcon } from "../../../components/ui/SvgIcons";
 
-import { getProjectTasks } from "../../../services/endpoints";
-import { usePagination } from "../../../hooks/usePagination";
 import { useAppSelector } from "../../../hooks/reduxHooks";
 import useIsMobile from "../../../hooks/useIsMobile";
 
 import { ICONS } from "../../../assets/index";
+import { useTasks } from "../../../hooks/queries/useTasks";
+import { useTasksInfinite } from "../../../hooks/queries/useTasksInfinite";
 import type { Task } from "../../../types/apiTypes";
+
+const LIMIT = 10;
 
 export default function Tasks() {
   const { projectId } = useParams();
@@ -35,6 +37,9 @@ export default function Tasks() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const view = (searchParams.get("view") as "board" | "list") || "board";
+  const currentPage = parseInt(searchParams.get("page") || "1", 10);
+  const offset = (currentPage - 1) * LIMIT;
+
   const selectedViewOption =
     VIEW_OPTIONS.find((o) => o.value === view) ?? VIEW_OPTIONS[0];
 
@@ -43,59 +48,25 @@ export default function Tasks() {
     ? { taskId: taskIdFromUrl, projectId: projectId! }
     : null;
 
+  // Infinite Query for Mobile
   const {
-    items: mobileTasks,
-    lastElementRef,
-    setSearchTerm: setMobileSearch,
-    loading: mobileLoading,
-  } = usePagination<Task>({
-    mode: "infinite",
-    fetchFn: async (limit, offset, term) => {
-      const res = await getProjectTasks(
-        projectId!,
-        undefined,
-        limit,
-        offset,
-        term,
-      );
-      const total = parseInt(
-        res.headers.get("content-range")?.split("/")[1] || "0",
-        10,
-      );
-      return { data: res.data ?? [], total };
-    },
-  });
+    data: infiniteData,
+    fetchNextPage,
+    hasNextPage,
+    isLoading: mobileLoading,
+  } = useTasksInfinite(projectId!, undefined, searchTerm);
 
+  const mobileTasks = infiniteData?.pages.flatMap(page => page.data) || [];
+
+  // Paginated Query for List View
   const {
-    items: paginatedTasks,
-    loading: listLoading,
-    error: listError,
-    currentPage,
-    totalItems,
-    hasMore,
-    isInvalidPage,
-    handlePreviousPage,
-    handleNextPage,
-    handlePageClick,
-    getVisiblePages,
-    isOutOfRange,
-    setSearchTerm: setListSearch,
-  } = usePagination<Task>({
-    fetchFn: async (limit, offset, term) => {
-      const res = await getProjectTasks(
-        projectId!,
-        undefined,
-        limit,
-        offset,
-        term,
-      );
-      const total = parseInt(
-        res.headers.get("content-range")?.split("/")[1] || "0",
-        10,
-      );
-      return { data: res.data ?? [], total };
-    },
-  });
+    data: paginatedData,
+    isLoading: listLoading,
+    isError: listError,
+  } = useTasks(projectId!, undefined, LIMIT, offset, searchTerm);
+
+  const paginatedTasks = paginatedData?.data || [];
+  const totalItems = paginatedData?.total || 0;
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
@@ -105,29 +76,8 @@ export default function Tasks() {
     }
   }, [searchParams, setSearchParams]);
 
-  useEffect(() => {
-    if (!isMobile && view === "list" && !searchParams.get("page")) {
-      setSearchParams(
-        (prev) => {
-          const p = new URLSearchParams(prev);
-          p.set("page", "1");
-          return p;
-        },
-        { replace: true },
-      );
-    }
-  }, [view, isMobile, searchParams, setSearchParams]);
-
-  // --- Handlers ---
-
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-    if (isMobile) {
-      setMobileSearch(value);
-    } else {
-      setListSearch(value);
-    }
+    setSearchTerm(e.target.value);
   };
 
   const handleViewChange = (option: SingleValue<ViewOption>) => {
@@ -148,31 +98,16 @@ export default function Tasks() {
       return params;
     });
   };
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const forceRefresh = () => {
-    setRefreshTrigger((prev) => prev + 1);
-  };
   const closeTask = () => {
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev);
       params.delete("taskId");
       return params;
     });
-
-    forceRefresh();
   };
 
   const isBoard = view === "board" && !isMobile;
-
-  if (!isMobile && view === "list" && (isInvalidPage || isOutOfRange)) {
-    return (
-      <div className="p-6 text-center">
-        <p className="text-gray-500 mb-4">Invalid page</p>
-        <Button onClick={() => handlePageClick(1)}>Go to Page 1</Button>
-      </div>
-    );
-  }
 
   return (
     <div
@@ -223,14 +158,9 @@ export default function Tasks() {
               isSearchable={false}
               formatOptionLabel={(data) => <ViewOptionLabel data={data} />}
               components={{
-                // Show icon + label in the control too
                 SingleValue: ({ data }) => <ViewOptionLabel data={data} />,
               }}
             />
-
-            <div className="h-10 w-10 place-items-center rounded-lg bg-gray-100 grid cursor-pointer hover:bg-gray-200">
-              <img src={ICONS.menu} width={18} height={12} alt="menu" />
-            </div>
           </div>
         </div>
       </div>
@@ -240,55 +170,38 @@ export default function Tasks() {
           <div className="flex flex-col gap-3">
             {mobileLoading && mobileTasks.length === 0 ? (
               <div className="space-y-2 px-4 py-2">
-                <div className="h-16 bg-gray-100 animate-pulse rounded" />
-                <div className="h-16 bg-gray-100 animate-pulse rounded" />
-                <div className="h-16 bg-gray-100 animate-pulse rounded" />
-              </div>
-            ) : mobileTasks.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-gray-400 text-sm">
-                <span className="font-medium">No tasks found</span>
-                {searchTerm && (
-                  <span className="text-xs mt-1">
-                    Try adjusting your search
-                  </span>
-                )}
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-16 bg-gray-100 animate-pulse rounded" />
+                ))}
               </div>
             ) : (
               <>
-                {mobileTasks.map((task, index) => (
-                  <div
+                {mobileTasks.map((task: Task) => (
+                  <MobileViewTask
                     key={task.id}
-                    ref={
-                      mobileTasks.length === index + 1 ? lastElementRef : null
-                    }
-                  >
-                    <MobileViewTask
-                      task={task}
-                      onClick={() => openTask(task.id)}
-                    />
-                  </div>
+                    task={task}
+                    onClick={() => openTask(task.id)}
+                  />
                 ))}
-                {mobileLoading && (
-                  <p className="text-center py-4 text-sm text-gray-400 animate-pulse">
-                    Loading more tasks...
-                  </p>
+                {hasNextPage && (
+                  <Button onClick={() => fetchNextPage()} className="w-full">
+                    Load More
+                  </Button>
                 )}
               </>
             )}
           </div>
         ) : isBoard ? (
           <BoardView
-            key={`board-${refreshTrigger}`}
             projectId={projectId!}
             onTaskClick={openTask}
             searchTerm={searchTerm}
           />
         ) : (
           <ListView
-            key={`list-view-${refreshTrigger}-${currentPage}`}
             tasks={paginatedTasks}
             loading={listLoading}
-            error={listError?.message ?? null}
+            error={listError ? "Failed to load tasks" : null}
             onRowClick={openTask}
             pagination={
               !listLoading &&
@@ -297,15 +210,14 @@ export default function Tasks() {
                   <Pagination
                     currentPage={currentPage}
                     totalItems={totalItems}
-                    pageSize={10}
+                    pageSize={LIMIT}
                     mode="compact"
-                    hasMore={hasMore}
+                    hasMore={offset + paginatedTasks.length < totalItems}
                     itemsShown={paginatedTasks.length}
                     label="tasks"
-                    getVisiblePages={getVisiblePages}
-                    handlePreviousPage={handlePreviousPage}
-                    handleNextPage={handleNextPage}
-                    handlePageClick={handlePageClick}
+                    handlePreviousPage={() => navigate(`?view=list&page=${currentPage - 1}`)}
+                    handleNextPage={() => navigate(`?view=list&page=${currentPage + 1}`)}
+                    handlePageClick={(p) => navigate(`?view=list&page=${p}`)}
                   />
                 </div>
               )
@@ -316,7 +228,6 @@ export default function Tasks() {
 
       {selectedTask && (
         <DetailsTask
-          key={selectedTask.taskId}
           isOpen={true}
           taskId={selectedTask.taskId}
           projectId={selectedTask.projectId}
