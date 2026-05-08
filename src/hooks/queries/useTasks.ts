@@ -1,6 +1,6 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { getProjectTasks } from '../../services/endpoints';
-import type { Task, StatusVariant } from '../../types/apiTypes';
+import type { Task, StatusVariant,ApiResponse } from '../../types/apiTypes';
 
 export const useTasks = (
   projectId: string,
