@@ -21,17 +21,19 @@ export interface StatusOption {
   label: string;
 }
 export interface Epic {
-  id?: string;
+  epic_id: string | undefined;
+  id: string;
   title: string;
   description: string;
   project_id: string;
   assignee_id?: string | null;
   created_at?:string;
-  created_by?:{id?:string;name?:string}
+  created_by:{id?:string;name?:string}
   deadline?: string;
   assignee_name?:string;
   assignee_avatar?: string 
 }
+
 
 export type StatusVariant = "TO_DO" | "IN_PROGRESS" | "DONE"| "BLOCKED"| "IN_REVIEW"| "READY_FOR_QA"| "REOPENED"| "READY_FOR_PRODUCTION";
 

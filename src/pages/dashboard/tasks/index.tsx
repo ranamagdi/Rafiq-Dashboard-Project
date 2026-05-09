@@ -217,8 +217,9 @@ export default function Tasks() {
                     label="tasks"
                     handlePreviousPage={() => navigate(`?view=list&page=${currentPage - 1}`)}
                     handleNextPage={() => navigate(`?view=list&page=${currentPage + 1}`)}
-                    handlePageClick={(p) => navigate(`?view=list&page=${p}`)}
-                  />
+                    handlePageClick={(p) => navigate(`?view=list&page=${p}`)} getVisiblePages={function (): (number | "...")[] {
+                      throw new Error("Function not implemented.");
+                    } }                  />
                 </div>
               )
             }
