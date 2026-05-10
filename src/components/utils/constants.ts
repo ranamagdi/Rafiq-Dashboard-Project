@@ -104,8 +104,7 @@ const STATUS_LABEL_MAP: Record<StatusVariant, string> = {
   REOPENED: "Reopened",
   READY_FOR_PRODUCTION: "Ready for Production",
 };
-
-export const DAYS = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"];
+export const DAYS = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
 
 export const statusOptions: StatusOption[] = [
   { value: "all", label: "All Statuses" },

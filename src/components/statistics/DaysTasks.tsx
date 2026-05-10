@@ -21,8 +21,8 @@ type DaysTasksProps = {
 
 export default function DaysTasks({ data }: DaysTasksProps) {
   const days: DayTask[] = (data?.daily ?? []).map((entry) => {
-    const date = new Date(entry.day);
-    const isToday = date.toDateString() === new Date().toDateString();
+    const date = new Date(entry.day + "T00:00:00");
+     const isToday = date.toDateString() === new Date().toDateString();
 
     const tasks = Object.entries(entry.statuses).map(([status, count]) => ({
       label: STATUS_MAP[status]?.label ?? status.replace(/_/g, " "),
@@ -50,17 +50,15 @@ export default function DaysTasks({ data }: DaysTasksProps) {
 
   return (
     <>
-
       <div className="hidden md:grid grid-cols-7 gap-4 w-full my-10 items-stretch">
         {days.map((item, idx) => (
-           <div
+          <div
             key={idx}
             className={`relative flex flex-col rounded-2xl bg-white p-4 min-h-100 transition-all ${
               item.isToday
                 ? "border-2 border-(--color-primary) shadow-[0_0_0_4px_rgba(0,82,204,0.08)]"
                 : "border border-gray-100"
             }`}
-          
           >
             {item.isToday && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-(--color-primary) text-white text-[10px] font-semibold px-4 py-1 rounded-full z-10">
@@ -107,7 +105,6 @@ export default function DaysTasks({ data }: DaysTasksProps) {
         ))}
       </div>
 
-    
       <div className="md:hidden flex flex-col gap-2 w-full my-6">
         {days.map((item, idx) => (
           <div

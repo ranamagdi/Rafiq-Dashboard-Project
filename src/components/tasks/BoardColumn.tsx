@@ -1,14 +1,13 @@
-import { useRef, useEffect } from "react";
+import { useRef, useCallback } from "react";
 import { PlusIcon, PlusRoundedIcon } from "../ui/SvgIcons";
-import type { Task, Column } from "../../types/apiTypes";
+import type {  Column } from "../../types/apiTypes";
 import Button from "../ui/Button";
 import { useNavigate } from "react-router-dom";
-import { usePagination } from "../../hooks/usePagination";
-import { getProjectTasks } from "../../services/endpoints";
 import type { DragState } from "../../types/apiTypes";
 import { mergeRefs } from "../utils/helpers";
 import DraggableCard from "./DraggableCard";
 import { useDroppable } from "@dnd-kit/core";
+import { useTasksInfinite } from "../../hooks/queries/useTasksInfinite";
 
 export default function BoardColumn({
   col,
@@ -28,43 +27,39 @@ export default function BoardColumn({
   const { setNodeRef, isOver } = useDroppable({ id: col.status });
 
   const {
-    items: rawItems,
-    loading,
-    hasMore,
-    lastElementRef,
-    setSearchTerm: setColSearch,
-  } = usePagination<Task>({
-    mode: "infinite",
-    root: scrollRef,
-    fetchFn: async (limit, offset, term) => {
-      const res = await getProjectTasks(
-        projectId,
-        col.status,
-        limit,
-        offset,
-        term,
-      );
-      const contentRange = res.headers.get("content-range");
-      const total = contentRange
-        ? parseInt(contentRange.split("/")[1], 10)
-        : (res.data?.length ?? 0);
-      return { data: res.data ?? [], total };
-    },
-  });
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useTasksInfinite(projectId, col.status, searchTerm);
 
+  const rawItems = data?.pages.flatMap((p) => p.data ?? []) ?? [];
   const ownItems = rawItems.filter((t) => !dragState.movedOut.has(t.id));
   const injected = dragState.movedIn[col.status] ?? [];
   const items = [...injected, ...ownItems];
 
-  const prevSearchTerm = useRef<string | null>(null);
-  useEffect(() => {
-    if (prevSearchTerm.current === null) {
-      prevSearchTerm.current = searchTerm;
-      return;
-    }
-    prevSearchTerm.current = searchTerm;
-    setColSearch(searchTerm);
-  }, [searchTerm, setColSearch]);
+  // Infinite scroll — observe last card
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const lastElementRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (isFetchingNextPage) return;
+      observerRef.current?.disconnect();
+      if (!node) return;
+      observerRef.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting && hasNextPage) {
+            fetchNextPage();
+          }
+        },
+        { root: scrollRef.current, threshold: 0.1 }
+      );
+      observerRef.current.observe(node);
+    },
+    [isFetchingNextPage, hasNextPage, fetchNextPage]
+  );
+
+  const loading = isLoading;
 
   return (
     <div className="flex flex-col min-w-62.5 h-full">
@@ -86,9 +81,7 @@ export default function BoardColumn({
         <Button
           className="bg-transparent text-gray-400 shadow-transparent px-0"
           onClick={() =>
-            navigate(
-              `/dashboard/project/${projectId}/tasks/new?status=${col.status}`,
-            )
+            navigate(`/dashboard/project/${projectId}/tasks/new?status=${col.status}`)
           }
         >
           <PlusIcon />
@@ -97,9 +90,7 @@ export default function BoardColumn({
 
       <Button
         onClick={() =>
-          navigate(
-            `/dashboard/project/${projectId}/tasks/new?status=${col.status}`,
-          )
+          navigate(`/dashboard/project/${projectId}/tasks/new?status=${col.status}`)
         }
         className="shrink-0 bg-transparent gap-2 w-full border-2 border-dashed border-gray-200 px-3 py-3 text-gray-500 hover:border-gray-400 transition mb-3"
       >
@@ -126,10 +117,7 @@ export default function BoardColumn({
           <div className="space-y-2">
             <div className="h-12 bg-(--color-surface-highest) animate-pulse rounded" />
             {[...Array(3)].map((_, i) => (
-              <div
-                key={i}
-                className="h-20 bg-(--color-surface-highest) animate-pulse rounded"
-              />
+              <div key={i} className="h-20 bg-(--color-surface-highest) animate-pulse rounded" />
             ))}
           </div>
         ) : items.length === 0 ? (
@@ -153,7 +141,7 @@ export default function BoardColumn({
                 />
               );
             })}
-            {loading && hasMore && (
+            {isFetchingNextPage && (
               <div className="h-20 bg-(--color-surface-highest) animate-pulse rounded mb-2.5" />
             )}
           </>

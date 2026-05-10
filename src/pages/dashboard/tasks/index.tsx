@@ -1,5 +1,5 @@
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect,useCallback } from "react";
 import Select, { type SingleValue } from "react-select";
 import {
   type ViewOption,
@@ -16,10 +16,8 @@ import Pagination from "../../../components/common/Pagination/Pagination";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import { PlusIcon } from "../../../components/ui/SvgIcons";
-
 import { useAppSelector } from "../../../hooks/reduxHooks";
 import useIsMobile from "../../../hooks/useIsMobile";
-
 import { ICONS } from "../../../assets/index";
 import { useTasks } from "../../../hooks/queries/useTasks";
 import { useTasksInfinite } from "../../../hooks/queries/useTasksInfinite";
@@ -54,9 +52,10 @@ export default function Tasks() {
     fetchNextPage,
     hasNextPage,
     isLoading: mobileLoading,
+    isFetchingNextPage,
   } = useTasksInfinite(projectId!, undefined, searchTerm);
 
-  const mobileTasks = infiniteData?.pages.flatMap(page => page.data) || [];
+  const mobileTasks = infiniteData?.pages.flatMap((page) => page.data) || [];
 
   // Paginated Query for List View
   const {
@@ -80,6 +79,22 @@ export default function Tasks() {
     setSearchTerm(e.target.value);
   };
 
+
+// Inside Tasks component, add:
+const loadMoreRef = useCallback(
+  (node: HTMLDivElement | null) => {
+    if (!node || !hasNextPage) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) fetchNextPage();
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  },
+  [hasNextPage, fetchNextPage]
+);
   const handleViewChange = (option: SingleValue<ViewOption>) => {
     if (!option) return;
     setSearchParams((prev) => {
@@ -166,31 +181,35 @@ export default function Tasks() {
       </div>
 
       <div className={isBoard ? "flex-1 min-h-0 overflow-hidden" : "pb-10"}>
-        {isMobile ? (
-          <div className="flex flex-col gap-3">
-            {mobileLoading && mobileTasks.length === 0 ? (
-              <div className="space-y-2 px-4 py-2">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-16 bg-gray-100 animate-pulse rounded" />
-                ))}
-              </div>
-            ) : (
-              <>
-                {mobileTasks.map((task: Task) => (
-                  <MobileViewTask
-                    key={task.id}
-                    task={task}
-                    onClick={() => openTask(task.id)}
-                  />
-                ))}
-                {hasNextPage && (
-                  <Button onClick={() => fetchNextPage()} className="w-full">
-                    Load More
-                  </Button>
-                )}
-              </>
-            )}
+      {isMobile ? (
+  <div className="flex flex-col gap-3">
+    {mobileLoading && mobileTasks.length === 0 ? (
+      <div className="space-y-2 px-4 py-2">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-16 bg-gray-100 animate-pulse rounded" />
+        ))}
+      </div>
+    ) : (
+      <>
+        {mobileTasks.map((task: Task) => (
+          <MobileViewTask
+            key={task.id}
+            task={task}
+            onClick={() => openTask(task.id)}
+          />
+        ))}
+
+        <div ref={loadMoreRef} className="h-1" />
+        {isFetchingNextPage && (  
+          <div className="space-y-2 px-4 py-2">
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="h-16 bg-gray-100 animate-pulse rounded" />
+            ))}
           </div>
+        )}
+      </>
+    )}
+  </div>
         ) : isBoard ? (
           <BoardView
             projectId={projectId!}
@@ -215,11 +234,17 @@ export default function Tasks() {
                     hasMore={offset + paginatedTasks.length < totalItems}
                     itemsShown={paginatedTasks.length}
                     label="tasks"
-                    handlePreviousPage={() => navigate(`?view=list&page=${currentPage - 1}`)}
-                    handleNextPage={() => navigate(`?view=list&page=${currentPage + 1}`)}
-                    handlePageClick={(p) => navigate(`?view=list&page=${p}`)} getVisiblePages={function (): (number | "...")[] {
+                    handlePreviousPage={() =>
+                      navigate(`?view=list&page=${currentPage - 1}`)
+                    }
+                    handleNextPage={() =>
+                      navigate(`?view=list&page=${currentPage + 1}`)
+                    }
+                    handlePageClick={(p) => navigate(`?view=list&page=${p}`)}
+                    getVisiblePages={function (): (number | "...")[] {
                       throw new Error("Function not implemented.");
-                    } }                  />
+                    }}
+                  />
                 </div>
               )
             }
