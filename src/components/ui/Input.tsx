@@ -42,15 +42,15 @@ const Input = React.forwardRef<HTMLInputElement, Props>(
         />
 
         {icon && (
-          <img
-            src={icon}
-            alt="icon"
+          <span
             className={cn(
-              "absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 opacity-60",
-              iconPosition === "right" ? "right-3" : "left-3",
+              "absolute inset-y-0 flex items-center justify-center w-10 h-full opacity-60",
+              iconPosition === "right" ? "right-0 pr-3" : "left-0 pl-3",
               hideIconOnMd && "md:hidden",
             )}
-          />
+          >
+            <img src={icon} alt="icon" className="w-5 h-5" />
+          </span>
         )}
       </div>
     );

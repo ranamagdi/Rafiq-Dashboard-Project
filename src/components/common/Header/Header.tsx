@@ -5,30 +5,28 @@ import Logo from "/favicon.svg";
 import useIsMobile from "../../../hooks/useIsMobile";
 import { useUserQuery } from "../../../hooks/queries/useUserQuery";
 
-
 const Header = () => {
   const { getCookie } = useCookie();
   const isMobile = useIsMobile();
   const isSidebarOpen = useAppSelector((state) => state.slider.isSidebarOpen);
   const accessToken = getCookie("access_token");
 
- const { data: user } = useUserQuery();
-
+  const { data: user } = useUserQuery({ enabled: Boolean(accessToken) });
 
   const initials = getInitials(user?.name);
-const showLogo =
-  (!isMobile && !isSidebarOpen) ||
-  (!accessToken && !isSidebarOpen && isMobile);
+  const showLogo =
+    (!isMobile && !isSidebarOpen) ||
+    (!accessToken && !isSidebarOpen && isMobile);
   return (
     <header className={accessToken ? "border-b border-gray-200" : ""}>
       <nav className="mx-auto flex items-center justify-between p-6">
         <div className="flex lg:flex-1">
-                 {showLogo && (
-          <a href="#" className="flex items-center gap-2">
-            <img src={Logo} alt="Your Company" className="h-8 w-auto" />
-            <span className="logo-name">TASKLY</span>
-          </a>
-        )}
+          {showLogo && (
+            <a href="#" className="flex items-center gap-2">
+              <img src={Logo} alt="Your Company" className="h-8 w-auto" />
+              <span className="logo-name">TASKLY</span>
+            </a>
+          )}
         </div>
 
         {accessToken && user && (

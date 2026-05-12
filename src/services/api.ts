@@ -22,50 +22,59 @@ const safeJson = async (res: Response) => {
 
 
 
+// Track if a refresh is already in progress (prevents parallel refresh calls)
+let refreshPromise: Promise<string> | null = null;
 
 const refreshAccessToken = async (): Promise<string> => {
-  try {
-    const refreshToken = getCookie("refresh_token");
+  // ✅ If already refreshing, reuse the same promise
+  if (refreshPromise) return refreshPromise;
 
-    if (!refreshToken) {
-      throw new Error("No refresh token found");
-    }
+  refreshPromise = (async () => {
+    try {
+      const refreshToken = getCookie("refresh_token");
 
-    const res = await fetch(
-      `${BASE_URL}/auth/v1/token?grant_type=refresh_token`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: import.meta.env.VITE_API_KEY,
-        },
-        body: JSON.stringify({ refresh_token: refreshToken }),
-        credentials: "omit",
+      if (!refreshToken) {
+        throw new Error("No refresh token found");
       }
-    );
 
-    const data = await res.json();
+      const res = await fetch(
+        `${BASE_URL}/auth/v1/token?grant_type=refresh_token`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_API_KEY,
+          },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+          credentials: "omit",
+        }
+      );
 
-    if (!res.ok) {
-      throw new Error(data?.msg || "Refresh token request failed");
+      const data = await res.json();
+
+      if (!res.ok || !data?.access_token) {
+        throw new Error(data?.msg || "Refresh failed");
+      }
+
+      // ✅ Save BOTH tokens — Supabase rotates the refresh token on each use
+      document.cookie = `access_token=${data.access_token}; path=/; SameSite=Strict`;
+      if (data.refresh_token) {
+        document.cookie = `refresh_token=${data.refresh_token}; path=/; SameSite=Strict`;
+      }
+
+      return data.access_token;
+    } catch (error) {
+      clearAuth();
+      throw error;
+    } finally {
+      // ✅ Always clear the lock
+      refreshPromise = null;
     }
+  })();
 
-    if (!data?.access_token) {
-      throw new Error("No access token returned from refresh");
-    }
-
- 
-    document.cookie = `access_token=${data.access_token}; path=/`;
-
-    return data.access_token;
-  } catch (error) {
-    console.error("refreshAccessToken error:", error);
-
-   clearAuth();
-
-    throw error; 
-  }
+  return refreshPromise;
 };
+
 const request = async <T = unknown>(
   endpoint: string,
   options: RequestInit = {}
@@ -87,45 +96,35 @@ const request = async <T = unknown>(
 
   let res = await makeRequest(token);
 
- 
   if (res.status === 401 || res.status === 403) {
+    // ✅ Don't attempt refresh if there's no refresh token — fail fast
+    if (!getCookie("refresh_token")) {
+      clearAuth();
+      window.location.href = "/login";
+      throw new Error("Session expired");
+    }
+
     try {
       const newToken = await refreshAccessToken();
       res = await makeRequest(newToken);
-    } catch (err: unknown) {
-      document.cookie = "access_token=; Max-Age=0";
-      document.cookie = "refresh_token=; Max-Age=0";
-
+    } catch {
+      clearAuth();
       window.location.href = "/login";
-
-      if (err instanceof Error) {
-        throw err;
-      }
-
-      throw new Error("Unknown refresh error");
+      throw new Error("Session expired");
     }
   }
 
   const data = await safeJson(res);
 
- if (!res.ok) {
-    const err = new Error(
-      data?.msg || data?.message || "API error"
-    ) as ApiError;  // cast to ApiError
-
-    err.response = {
-      status: res.status,
-      data,
-    };
-
+  if (!res.ok) {
+    const err = new Error(data?.msg || data?.message || "API error") as ApiError;
+    err.response = { status: res.status, data };
     throw err;
   }
 
-  return {
-    data,
-    headers: res.headers,
-  };
+  return { data, headers: res.headers };
 };
+
 
 export const api = {
   get: <T = unknown>(url: string, options?: RequestInit) =>

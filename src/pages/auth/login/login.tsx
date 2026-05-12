@@ -1,6 +1,7 @@
 import { ICONS } from "../../../assets/index";
 import Input from "../../../components/ui/Input";
 import Button from "../../../components/ui/Button";
+import { ShowPassword, HidePassword } from "../../../components/ui/SvgIcons";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
@@ -17,6 +18,7 @@ const Login = () => {
   const queryClient = useQueryClient();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [remember, setRemember] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
 
   const loginSchema = z.object({
     email: z.email("Invalid email address").nonempty("Email is required"),
@@ -177,15 +179,25 @@ const Login = () => {
                 Forgot?
               </span>
             </div>
-            <Input
-              type="password"
-              placeholder="Minimum 8 characters"
-              icon={ICONS.lock}
-              hideIconOnMd={true}
-              isValid={!errors.password}
-              {...register("password")}
-              style={{ marginTop: "-10px" }}
-            />
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="Minimum 8 characters"
+                icon={ICONS.lock}
+                iconPosition="left"
+                hideIconOnMd={true}
+                className="pr-12"
+                isValid={!errors.password}
+                {...register("password")}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute inset-y-0 right-3 flex items-center justify-center align-middle px-2 text-[#737685] hover:text-(--color-primary)"
+              >
+                {showPassword ? <ShowPassword /> : <HidePassword />}
+              </button>
+            </div>
             {errors.password && (
               <p className="error-message">{errors.password.message}</p>
             )}

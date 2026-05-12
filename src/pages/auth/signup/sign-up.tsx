@@ -1,6 +1,7 @@
 import { ICONS } from "../../../assets/index";
 import Input from "../../../components/ui/Input";
 import Button from "../../../components/ui/Button";
+import { ShowPassword, HidePassword } from "../../../components/ui/SvgIcons";
 import { useNavigate } from "react-router-dom";
 import { useForm, useWatch } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
@@ -10,12 +11,15 @@ import { signUp } from "../../../services/endpoints";
 import { useState } from "react";
 import { useCookie } from "../../../hooks/useCookie";
 import { useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 const Signup = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { setCookie } = useCookie();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const signUpSchema = z
     .object({
@@ -95,6 +99,7 @@ const Signup = () => {
         queryKey: ["user"],
       });
 
+      toast.success("Account created successfully!");
       navigate("/dashboard");
       console.log("Sign up successful:", response.data);
     } catch (error) {
@@ -227,11 +232,23 @@ const Signup = () => {
               >
                 Password
               </label>
-              <Input
-                type="password"
-                placeholder="Minimum 8 characters"
-                {...register("password")}
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Minimum 8 characters"
+                  icon={ICONS.lock}
+                  iconPosition="left"
+                  className="pr-12"
+                  {...register("password")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute inset-y-0 right-3 flex items-center px-2 text-[#737685] hover:text-(--color-primary)"
+                >
+                  {showPassword ? <ShowPassword /> : <HidePassword />}
+                </button>
+              </div>
               {errors.password && (
                 <p className="error-message">{errors.password.message}</p>
               )}
@@ -248,11 +265,23 @@ const Signup = () => {
               >
                 Confirm Password
               </label>
-              <Input
-                type="password"
-                placeholder="Repeat your password"
-                {...register("confirmPassword")}
-              />
+              <div className="relative">
+                <Input
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Repeat your password"
+                  icon={ICONS.lock}
+                  iconPosition="left"
+                  className="pr-12"
+                  {...register("confirmPassword")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  className="absolute inset-y-0 right-3 flex items-center px-2 text-[#737685] hover:text-(--color-primary)"
+                >
+                  {showConfirmPassword ? <ShowPassword /> : <HidePassword />}
+                </button>
+              </div>
               {errors.confirmPassword && (
                 <p className="error-message">
                   {errors.confirmPassword.message}

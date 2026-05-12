@@ -26,9 +26,12 @@ const fetchUser = async (): Promise<UserMetaData> => {
   };
 };
 
-export const useUserQuery = () => {
+export const useUserQuery = ({
+  enabled = true,
+}: { enabled?: boolean } = {}) => {
   return useQuery({
     queryKey: ["user"],
     queryFn: fetchUser,
+    enabled,
   });
 };
